@@ -1,11 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
-
 import React from 'react';
 import {View, StatusBar, Dimensions, StyleSheet, ScrollView} from 'react-native';
 import {Text, Block, Card, Button, NavBar, theme} from 'galio-framework';
@@ -39,7 +31,7 @@ class RenderCard extends React.Component {
             <Text size={BASE_SIZE * 0.875} muted>{this.props.subtitle}</Text>
           </Block>
           <Button style={styles.right}>
-            <Icon size={18} name={this.props.icon} color={COLOR_GREY} />
+            <Icon size={18} name="chevron-right" color={COLOR_GREY} />
           </Button>
         </Block>
     );
@@ -63,8 +55,8 @@ const App: () => React$Node = () => {
 
       <ScrollView style={{ flex: 1 }}>
 
-        <RenderCard title="teste" subtitle="Teste2" icon="home"/>
-        <RenderCard title="testes" subtitle="Teste2" icon="list-bullet"/>
+        <RenderCard title="teste" subtitle="Teste2"/>
+        <RenderCard title="testes" subtitle="Teste2"/>
       </ScrollView>
     </Block>
   );
