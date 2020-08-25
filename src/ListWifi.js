@@ -1,10 +1,10 @@
 import React from 'react';
-import {View, StatusBar, Dimensions, StyleSheet, ScrollView, Image,
+import {View, StatusBar, Dimensions, StyleSheet, ScrollView, Image, Alert,
   PermissionsAndroid, NativeModules, AppState, NativeEventEmitter} from 'react-native';
 import {Text, Block, Card, Button, NavBar, theme} from 'galio-framework';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
-import BleManager from 'react-native-ble-manager';
+import WifiManager from "react-native-wifi-reborn";
 
 const BASE_SIZE = theme.SIZES.BASE;
 const GRADIENT_BLUE = ['#6B84CA', '#8F44CE'];
@@ -12,21 +12,19 @@ const GRADIENT_PINK = ['#D442F8', '#B645F5', '#9B40F8'];
 const COLOR_WHITE = theme.COLORS.WHITE;
 const COLOR_GREY = theme.COLORS.MUTED; // '#D8DDE1';
 
-const manager = BleManager;
-const bleManagerEmitter = new NativeEventEmitter(manager);
-
-class RenderCard extends React.Component {
+class ListWifiCards extends React.Component {
 
 	constructor(props)
 	{
-		super(props);  
+		super(props);
+
 	}
 
 	render()
 	{
 		return (
 			<Block row center card shadow space="between" style={styles.card} key={this.props.title}>
-				<Icon style={styles.right} size={22} name="bluetooth" color={COLOR_GREY} />
+				<Icon style={styles.right} size={22} name="wifi" color={COLOR_GREY} />
 				<Block flex>
 					<Text size={BASE_SIZE * 1.125}>{this.props.title}</Text>
 					<Text size={BASE_SIZE * 0.875} muted>{this.props.subtitle}</Text>
@@ -41,99 +39,101 @@ class RenderCard extends React.Component {
 }
 
 let verifica = false;
-let devices = new Array();
-var retorno = false;
+let redes = new Array();
+
 class ListDevices extends React.Component
 {
 
 	constructor(props) 
 	{
 		super(props);
-		retorno = false; //Monitora retorno
-		this.handleDiscoverPeripheral = this.handleDiscoverPeripheral.bind(this);
+		this.retorno = false; //Monitora retorno
+		this.params = this.props.navigation.state.params;
 	}
   	
-  	//Retorno dos dispositivos encontrados
-	handleDiscoverPeripheral(peripheral)
+  	componentDidMount()
 	{
-		if(retorno == false)
-		{
-			devices = [];
-			devices = [{'name': peripheral.name, 'UUID' : peripheral.id}];
-			retorno = true;
-		}
-		else
-		{
-			verifica = false;
-			if(devices)
-			{
-				devices.map(nameDevice =>
-				{
-					if(nameDevice.name == peripheral.name)
-						verifica = true;
-				});	
-			}
-			
-			//Verifica se o elemento já existe na lista
-			if(verifica == false)
-			{
-				devices.push({'name': peripheral.name, 'UUID' : peripheral.id});
-			}	
-		}
-		this.forceUpdate();
-	}
-
-	componentDidMount()
-	{
-		this.handlerDiscover = bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', this.handleDiscoverPeripheral );
 		
 		//Verifica permissão
-		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).
+		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION).
 		then((result) => 
 		{
 			if (result) //Se permissão for OK
 			{
-				//Inicia módulo Bluetooth
-				manager.start({showAlert: false});
+				WifiManager.loadWifiList().then(
+				nets =>
+				{
+					this.retorno = true;
+					var arrayJson = JSON.parse(nets);
+					for(var aux=0; aux<arrayJson.length; aux++)
+					{
+						console.log(arrayJson[aux].SSID)
+						redes.push(arrayJson[aux].SSID);
+						this.forceUpdate();		
+					}
+					
+				},
+				error =>
+				{
+					Alert.alert(
+						"Erro",
+						"Verifique suas permissões",
+						[{ text: "OK", onPress: () => console.log("OK Pressed") }],
+						{ cancelable: false }
+					);
+				});
+
 				
-				//Realiza o scan dos dispositivos
-				BleManager.scan([], 15, false);
 		 	}
 	 		else
 	 		{
 	 			//Requisita permissão
-				PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).
+				PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION).
 				then((result) => 
 				{
 					if (result) //Permissão concedida
 					{
-						//Inicia módulo Bluetooth
-						manager.start({showAlert: false});
-						
-						//Realiza o scan dos dispositivos
-						BleManager.scan(devices, 15, false);
+						WifiManager.loadWifiList().then(
+						nets =>
+						{
+							this.retorno = true;
+							var arrayJson = JSON.parse(nets);
+							for(var aux=0; aux<arrayJson.length; aux++)
+								redes.push(arrayJson[aux].SSID);
+							this.forceUpdate();
+							
+						},
+						error =>
+						{
+							console.log("Falhou");
+							console.log(error);
+						});
 					}
 					else 
 					{
 						return "Error";
 					}
 				});
+				
 	 		}
 		});
 	}
 
 	printCards()
 	{
-		if(retorno == true && devices)
+		if(this.retorno == true)
 	 	{
-	 		return devices.map(nameDevice =>
+	 		return redes.map(nameDevice =>
 	 		{
-	 			if(nameDevice.name)
+	 			if(nameDevice)
 	 			{
 		 			return(
-		 				<RenderCard title={nameDevice.name} subtitle={nameDevice.UUID} 
-		 					funcao={() => {this.props.funcao.navigate('BluetoothCarregarPage' ,
-		 					{name: nameDevice.name, UUID : nameDevice.UUID,});}}/>
+		 				<ListWifiCards title={nameDevice} subtitle="Disponível"
+		 					funcao={() => this.props.navigation.navigate('WifiParamsPage' ,
+		 					{UUID : this.params.UUID, 
+		 					 serviceParam : this.params.serviceParam,
+		 					 characteristicParam : this.params.characteristicParam,
+		 					 SSID: nameDevice, })}/>
 		 			);
 		 		}
 	 		})
@@ -142,12 +142,12 @@ class ListDevices extends React.Component
 
 	render()
 	{
-		if(retorno == false)
+		if(this.retorno == false)
 		{
 			return(
 				<ScrollView style={{ flex: 1 }}>
 					<Text style={styles.textHeader}>
-						Buscando dispositivos...</Text>
+						Buscando redes...</Text>
 				</ScrollView>
 			);	
 		}
@@ -164,23 +164,18 @@ class ListDevices extends React.Component
 
 const { width } = Dimensions.get("screen");
 
-const Bluetooth = ({ navigation }) => (
+const ListWifi = ({ navigation }) => (
  
 	 <Block flex fluid style={{backgroundColor : '#3A435E'}}>
 		<Block row center card space="between" style={styles.header}>
-			<Block flex center space="between">
-				<Image source={require('./image/logo.png')}/>
-				<Button round center style={{ width: 40, height: 40}} color={COLOR_GREY} 
-						onPress={() => BleManager.scan([], 15, false)}>
-		  			<Icon size={22} name="refresh" color={COLOR_WHITE} />
-		  		</Button>
-		  		<Text size={BASE_SIZE * 1.125} style={styles.textHeader}>SELECIONE O DISPOSITIVO</Text>
+			 
+		  <Block center flex>
+			<Image source={require('./image/logo.png')}/>
+			<Text size={BASE_SIZE * 1.125} style={styles.textHeader}>SELECIONE UMA REDE</Text>
 		  </Block>
-		  		
-		  
 		</Block>
 		
-		<ListDevices funcao={navigation}/>
+		  <ListDevices navigation={navigation}/>
 		
 	 </Block>
   
@@ -190,7 +185,6 @@ const styles = StyleSheet.create({
   textHeader:{
 	 color : 'white',
 	 textAlign: 'center',
-	 padding: BASE_SIZE,
   },
   header: {
 	 borderColor: '#3A435E',
@@ -234,8 +228,8 @@ const styles = StyleSheet.create({
   },
 });
 
-Bluetooth.navigationOptions = {
-  header: null,
+ListWifi.navigationOptions = {
+    header: null,
 }
 
-export default Bluetooth;
+export default ListWifi;

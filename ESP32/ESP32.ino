@@ -43,14 +43,27 @@ class MyCallbacks: public BLECharacteristicCallbacks
         Serial.println("*********");
         Serial.print("Received Value: ");
         
-        pCharacteristic->setValue("Teste");
-     
-        //pCharacteristic->notify(); // Envia o valor para o aplicativo!
         for (int i = 0; i < rxValue.length(); i++) {
           Serial.print(rxValue[i]);
         }
         Serial.println();
         Serial.println("*********");
+
+        if(rxValue.compare("{dotA:G:I}") == 0)
+          pCharacteristic->setValue("{0001}");
+        else if(rxValue.compare("{dotA:G:L}") == 0)
+          pCharacteristic->setValue("{0003}");
+        else if(rxValue.compare("{dotA:D:S:sal}") == 0)
+          pCharacteristic->setValue("{dotA:D:S:sal}");
+        else if(rxValue.compare("{dotA:D:P:teste}") == 0)
+          pCharacteristic->setValue("{dotA:D:P:teste}");
+        else if(rxValue.compare("{dotA:G:S}") == 0)
+          pCharacteristic->setValue("{sal}");
+        else if(rxValue.compare("{dotA:G:P}") == 0)
+          pCharacteristic->setValue("{teste}");
+        else
+          pCharacteristic->setValue("{0}");
+
       }
  
     }
