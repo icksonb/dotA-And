@@ -51,6 +51,7 @@ class ListDevices extends React.Component
 		super(props);
 		retorno = false; //Monitora retorno
 		this.handleDiscoverPeripheral = this.handleDiscoverPeripheral.bind(this);
+		console.log("Construtor");
 	}
   	
   	//Retorno dos dispositivos encontrados
@@ -85,6 +86,8 @@ class ListDevices extends React.Component
 
 	componentDidMount()
 	{
+		console.log("Did");
+
 		this.handlerDiscover = bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', this.handleDiscoverPeripheral );
 		
 		//Verifica permissão
@@ -140,27 +143,45 @@ class ListDevices extends React.Component
 	 	}
 	}
 
+	refresh()
+	{
+		devices = new Array();
+		BleManager.scan([], 15, false);
+		retorno = false;
+		this.forceUpdate();
+	}
+
 	render()
 	{
 		if(retorno == false)
 		{
 			return(
-				<ScrollView style={{ flex: 1 }}>
-					<Text style={styles.textHeader}>
+				<View style={{ flex: 1, alignItems: 'center' }}>
+					<Button round center style={{ width: 40, height: 40}} color={COLOR_GREY} 
+							onPress={() => this.refresh()}>
+			  			<Icon size={22} name="refresh" color={COLOR_WHITE} />
+		  			</Button>
+					<Text size={BASE_SIZE * 1.125} style={styles.textHeader}>
 						Buscando dispositivos...</Text>
-				</ScrollView>
+				</View>
 			);	
 		}
 		else
 		{
 			return(
-				<ScrollView style={{ flex: 1 }}>
+				<View style={{ flex: 1, alignItems: 'center' }}>
+					<Button round center style={{ width: 40, height: 40}} color={COLOR_GREY} 
+							onPress={() => this.refresh()}>
+			  			<Icon size={22} name="refresh" color={COLOR_WHITE} />
+		  			</Button>
+		  			<Text size={BASE_SIZE * 1.125} style={styles.textHeader}>SELECIONE O DISPOSITIVO</Text>
 					{this.printCards()}				
-				</ScrollView>
+				</View>
 			);	
 		}
 	}
 }
+
 
 const { width } = Dimensions.get("screen");
 
@@ -170,11 +191,6 @@ const Bluetooth = ({ navigation }) => (
 		<Block row center card space="between" style={styles.header}>
 			<Block flex center space="between">
 				<Image source={require('./image/logo.png')}/>
-				<Button round center style={{ width: 40, height: 40}} color={COLOR_GREY} 
-						onPress={() => BleManager.scan([], 15, false)}>
-		  			<Icon size={22} name="refresh" color={COLOR_WHITE} />
-		  		</Button>
-		  		<Text size={BASE_SIZE * 1.125} style={styles.textHeader}>SELECIONE O DISPOSITIVO</Text>
 		  </Block>
 		  		
 		  
@@ -191,6 +207,8 @@ const styles = StyleSheet.create({
 	 color : 'white',
 	 textAlign: 'center',
 	 padding: BASE_SIZE,
+	 fontFamily: 'Abel',
+	 letterSpacing: BASE_SIZE/5,
   },
   header: {
 	 borderColor: '#3A435E',

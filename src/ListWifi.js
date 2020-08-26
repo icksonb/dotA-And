@@ -146,7 +146,7 @@ class ListDevices extends React.Component
 		{
 			return(
 				<ScrollView style={{ flex: 1 }}>
-					<Text style={styles.textHeader}>
+					<Text style={styles.textHeader} size={BASE_SIZE}>
 						Buscando redes...</Text>
 				</ScrollView>
 			);	
@@ -185,6 +185,8 @@ const styles = StyleSheet.create({
   textHeader:{
 	 color : 'white',
 	 textAlign: 'center',
+	 fontFamily: 'Abel',
+	 letterSpacing: BASE_SIZE/5,
   },
   header: {
 	 borderColor: '#3A435E',

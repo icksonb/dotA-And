@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, NativeEventEmitter, StyleSheet, Image, Alert } from 'react-native';
+import { View, NativeEventEmitter, StyleSheet, Image, 
+	Alert, Dimensions} from 'react-native';
 import  BleManager  from 'react-native-ble-manager';
 import {Text, Block, Card, Button, NavBar, theme} from 'galio-framework';
 import { stringToBytes } from "convert-string";
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const BASE_SIZE = theme.SIZES.BASE;
 const GRADIENT_BLUE = ['#6B84CA', '#8F44CE'];
@@ -10,14 +12,45 @@ const GRADIENT_PINK = ['#D442F8', '#B645F5', '#9B40F8'];
 const COLOR_WHITE = theme.COLORS.WHITE;
 const COLOR_GREY = theme.COLORS.MUTED; // '#D8DDE1';
 
-var SERIE = "";
-var LOTE = "";
+var SERIE = "-";
+var LOTE = "-";
+var CONEXAO = "Sincronizando";
 
 const manager = BleManager;
 const bleManagerEmitter = new NativeEventEmitter(manager);
 var conectado = 0;
 var characteristic = "";
 var service = "";
+
+const { height, width } = Dimensions.get('screen');
+
+class CardsTwo extends React.Component
+{
+	constructor(props)
+	{
+		super(props);
+	}
+	render()
+	{
+		return(
+
+			<Block row fluid>
+				<Block card space="between" style={styles.cardTwo}>
+					<Icon style={{textAlign: 'center'}} size={40} name={this.props.icone1} color={COLOR_GREY} />
+					<Text center style={styles.textCardTitle}>{this.props.titulo1}</Text>
+					<Text center style={styles.textCard}>{this.props.subtitulo1}</Text>
+				</Block>
+				<Block card space="between" style={styles.cardTwo}>
+					<Icon style={{textAlign: 'center'}} size={40} name={this.props.icone2} color={COLOR_GREY} />
+					<Text center style={styles.textCardTitle}>{this.props.titulo2}</Text>
+					<Text center style={styles.textCard}>{this.props.subtitulo2}</Text>
+				</Block>
+			</Block>
+		);
+	}
+}
+
+
 class CarregaBluetooth extends React.Component
 {
 	constructor(props)
@@ -40,10 +73,14 @@ class CarregaBluetooth extends React.Component
 			})
 			.catch((error) =>
 			{
+				conectado = 2;
+				SERIE = "-";
+				LOTE = "-";
+				this.forceUpdate();
 				Alert.alert(
 					"Erro",
 					"Erro durante a comunicação com o dispositivo.",
-					[{ text: "OK", onPress: () => {this.props.navigation.navigate('BluetoothPage')}}],
+					[{ text: "OK", onPress: () => {console.log("OK")}}],
 					{ cancelable: false }
 				);
 				console.log(error);
@@ -70,10 +107,14 @@ class CarregaBluetooth extends React.Component
 			    
 			})
 			.catch((error) => {
+				conectado = 2;
+				SERIE = "-";
+				LOTE = "-";
+				this.forceUpdate();
 				Alert.alert(
 					"Erro",
 					"Erro durante a comunicação com o dispositivo.",
-					[{ text: "OK", onPress: () => {this.props.navigation.navigate('BluetoothPage')}}],
+					[{ text: "OK", onPress: () => {console.log("OK")}}],
 					{ cancelable: false }
 				);
 				console.log("Error Serie");
@@ -93,10 +134,14 @@ class CarregaBluetooth extends React.Component
 			})
 			.catch((error) =>
 			{
+				conectado = 2;
+				SERIE = "-";
+				LOTE = "-";
+				this.forceUpdate();
 				Alert.alert(
 					"Erro",
 					"Erro durante a comunicação com o dispositivo.",
-					[{ text: "OK", onPress: () => {this.props.navigation.navigate('BluetoothPage')}}],
+					[{ text: "OK", onPress: () => {console.log("OK")}}],
 					{ cancelable: false }
 				);
 				console.log("Error lote");
@@ -117,17 +162,21 @@ class CarregaBluetooth extends React.Component
 			    	buffer += String.fromCharCode(data[aux]);
 
 			    LOTE = buffer.replace("{", "");
-			    LOTE = SERIE.replace("}", "");
+			    LOTE = LOTE.replace("}", "");
 			    conectado = 1;
 			    this.forceUpdate();
 			    
 			    
 			})
 			.catch((error) => {
+				conectado = 2;
+				SERIE = "-";
+				LOTE = "-";
+				this.forceUpdate();
 				Alert.alert(
 					"Erro",
 					"Erro durante a comunicação com o dispositivo.",
-					[{ text: "OK", onPress: () => {this.props.navigation.navigate('BluetoothPage')}}],
+					[{ text: "OK", onPress: () => {console.log("OK")}}],
 					{ cancelable: false }
 				);
 				console.log("Error lote");
@@ -170,10 +219,14 @@ class CarregaBluetooth extends React.Component
 				})
 				.catch((error) =>
 				{
+					conectado = 2;
+					SERIE = "-";
+					LOTE = "-";
+					this.forceUpdate();
 					Alert.alert(
 						"Erro",
 						"Erro durante a comunicação com o dispositivo.",
-						[{ text: "OK", onPress: () => {this.props.navigation.navigate('BluetoothPage')}}],
+						[{ text: "OK", onPress: () => {console.log("OK")}}],
 						{ cancelable: false }
 					);
 					console.log("Error");
@@ -196,6 +249,15 @@ class CarregaBluetooth extends React.Component
 		.catch((error) => 
 		{
 			conectado = 2;
+			SERIE = "-";
+			LOTE = "-";
+			this.forceUpdate();
+			Alert.alert(
+				"Erro",
+				"Erro durante a comunicação com o dispositivo.",
+				[{ text: "OK", onPress: () => {console.log("OK")}}],
+				{ cancelable: false }
+			);
 			console.log("Erro conect");
 			console.log(error);
 			this.forceUpdate();
@@ -205,53 +267,56 @@ class CarregaBluetooth extends React.Component
 
 	render()
 	{
-		if(conectado == 0)
+		
+		if(conectado == 1)
 		{
-			return(
-				<View style={{ flex: 1, alignItems: 'center', 
-							backgroundColor : '#3A435E' }} >
-					<Text style={{color : 'white'}}>Sincronizando com o dispositivo</Text>
-					<Text style={{color : 'white', fontWeight : 'bold',}}>{this.params.name}</Text>
-				</View>
-
-			);	
-		}
-		else if(conectado == 1)
-		{
-			return(
-				<View style={{ flex: 1, alignItems: 'center', 
-							backgroundColor : '#3A435E' }} >
-
-					<Text style={{color : 'white', paddingBottom : BASE_SIZE}}>CONFIRA OS DADOS</Text>
-					<Text style={{color : 'white'}}>Conectado com o dispositivo</Text>
-					<Text style={{color : 'white', fontWeight : 'bold',}}>{this.params.name}</Text>
-					<Text style={{color : 'white', paddingTop : BASE_SIZE}}>Número de série:</Text>
-					<Text style={{color : 'white', fontWeight : 'bold', paddingBottom : BASE_SIZE}}>{SERIE}</Text>
-					<Text style={{color : 'white', paddingTop : BASE_SIZE}}>Número do lote:</Text>
-					<Text style={{color : 'white', fontWeight : 'bold', paddingBottom : BASE_SIZE}}>{SERIE}</Text>
-					<Button color="success" 
+			return(<Block style={{ flex: 1, alignItems: 'center'}}>
+				<CardsTwo icone1="bluetooth-b" titulo1="NOME" subtitulo1={this.params.name}
+					icone2="rss" titulo2="CONEXÃO" subtitulo2="Conectado"/>
+				<CardsTwo icone1="database" titulo1="LOTE" subtitulo1={LOTE}
+					icone2="link" titulo2="SÉRIE" subtitulo2={SERIE}/>
+				
+				<Button color="#78A59A" center
 					onPress={() => this.props.navigation.navigate('ListWifiPage' ,
 		 					{UUID : this.params.UUID, 
 		 					 serviceParam : service,
 		 					 characteristicParam : characteristic,})}
-					>CONFIRMAR</Button>
-				</View>
-
+					>CONTINUAR</Button>
+				</Block>
 
 			);
 		}
-		else 
+		else if(conectado == 2)
 		{
-			return(
-				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', 
-							backgroundColor : '#3A435E' }} >
-					<Text style={{color : 'white'}}>Erro ao conectar com o dispositivo</Text>
-					<Text style={{color : 'white', fontWeight : 'bold',}}>{this.params.name}</Text>
-				</View>
-
-			);
-		}		
+			return(<Block style={{ flex: 1, alignItems: 'center'}}>
+				<CardsTwo icone1="bluetooth-b" titulo1="NOME" subtitulo1={this.params.name}
+					icone2="rss" titulo2="CONEXÃO" subtitulo2="Erro"/>
+				<CardsTwo icone1="database" titulo1="LOTE" subtitulo1={LOTE}
+					icone2="link" titulo2="SÉRIE" subtitulo2={SERIE}/>
+				<Button color="#BE5A38" center
+					onPress={() => this.props.navigation.navigate('BluetoothPage')}
+					>VOLTAR</Button>
+				</Block>
+			);		
+		}
+		else
+		{
+			return(<Block style={{ flex: 1, alignItems: 'center'}}>
+				<CardsTwo icone1="bluetooth-b" titulo1="NOME" subtitulo1={this.params.name}
+					icone2="rss" titulo2="CONEXÃO" subtitulo2="Sincronizando"/>
+				<CardsTwo icone1="database" titulo1="LOTE" subtitulo1={LOTE}
+					icone2="link" titulo2="SÉRIE" subtitulo2={SERIE}/>
+				<Button color="#BE5A38" center
+					onPress={() => this.props.navigation.navigate('BluetoothPage')}
+					>VOLTAR</Button>
+				</Block>
+			);		
+		}
+		
+		
+		
 	}
+
 }
 
 
@@ -262,6 +327,7 @@ const BluetoothCarregar = ({ navigation }) => (
 				<Image source={require('./image/logo.png')}/>
 			</Block>
 		</Block>
+		
 		<CarregaBluetooth navigation={navigation}/>
 
 	</Block>
@@ -269,9 +335,22 @@ const BluetoothCarregar = ({ navigation }) => (
 );
 
 const styles = StyleSheet.create({
+  textCardTitle:{
+  	fontFamily: 'Abel',
+  	fontSize: BASE_SIZE*1.2,
+  	color: 'black',
+  	paddingTop: BASE_SIZE,
+  	fontWeight: 'bold',
+  },
+  textCard:{
+  	fontFamily: 'Abel',
+  	fontSize: BASE_SIZE*1.2,
+  	color: 'black',
+  },
   textHeader:{
 	 color : 'white',
 	 textAlign: 'center',
+	 fontFamily: 'Abel',
   },
   header: {
 	 borderColor: '#3A435E',
@@ -289,6 +368,15 @@ const styles = StyleSheet.create({
 	 padding: BASE_SIZE,
 	 backgroundColor: COLOR_WHITE,
 	 shadowOpacity: 0.40,
+  },
+  cardTwo: {
+	 borderColor: 'transparent',
+	 marginHorizontal: BASE_SIZE,
+	 marginVertical: BASE_SIZE / 2,
+	 padding: BASE_SIZE,
+	 backgroundColor: COLOR_WHITE,
+	 shadowOpacity: 0.40,
+	 width: width/2 - BASE_SIZE*2,
   },
   menu: {
 	 width: BASE_SIZE * 2,

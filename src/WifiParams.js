@@ -148,11 +148,11 @@ const WifiParams = ({ navigation }) => (
 		<Block row center card space="between" style={styles.header}>
 			<Block flex center space="between">
 				<Image source={require('./image/logo.png')}/>
-				<Text size={BASE_SIZE * 1.125} style={styles.textHeader}>CONFIRME OS DADOS</Text>
-				<Text size={BASE_SIZE} style={styles.textHeader}>SSID: {navigation.state.params.SSID}</Text>
+				<Text size={BASE_SIZE * 1.2} style={styles.textHeader}>CONFIRME OS DADOS</Text>
+				<Text size={BASE_SIZE*1.1} style={styles.textSSID}>SSID: {navigation.state.params.SSID}</Text>
 				<Input placeholder="password" rounded password viewPass 
 				style={{ borderColor: COLOR_GREY }} onChangeText={value => {pass=value}}/>
-				<Button color="success" 
+				<Button color="#78A59A" 
 					onPress={() => setSSID(navigation.state.params.UUID,
 						navigation.state.params.serviceParam, 
 						navigation.state.params.characteristicParam,
@@ -167,10 +167,20 @@ const WifiParams = ({ navigation }) => (
 );
 
 const styles = StyleSheet.create({
+  textSSID:{
+	 color : 'white',
+	 textAlign: 'center',
+	 padding: BASE_SIZE,
+	 fontFamily: 'Abel',
+	 letterSpacing: BASE_SIZE/5,
+	 fontWeight: 'bold',
+  },
   textHeader:{
 	 color : 'white',
 	 textAlign: 'center',
 	 padding: BASE_SIZE,
+	 fontFamily: 'Abel',
+	 letterSpacing: BASE_SIZE/5,
   },
   header: {
 	 borderColor: '#3A435E',
