@@ -21,8 +21,50 @@ const bleManagerEmitter = new NativeEventEmitter(manager);
 var conectado = 0;
 var characteristic = "";
 var service = "";
-
+var UUID = "";
+var tempoAtualizacao = 0;
+var flagTimer = false;
 const { height, width } = Dimensions.get('screen');
+
+function atualizaBLE()
+{
+	const tempoAgora = Date.parse(new Date());
+	//Não chegou no tempo e enviar a nova solicitação
+	if(tempoAgora < tempoAtualizacao)
+	{
+		//Habilita para mais 10s
+		setTimeout(() => {atualizaBLE()}, 1000*10);
+		return;
+	}
+	//Envia dados para extensão de tempo
+	const dadosExtensaoTempo = stringToBytes("{dotA:T:B:E}");
+	manager.writeWithoutResponse(UUID, service, 
+	characteristic, dadosExtensaoTempo)
+		.then(() =>
+		{
+			console.log("Extensão OK");
+			setTimeout(() => {atualizaBLE()}, 1000*10);
+			//Atualização em 1 min
+			tempoAtualizacao = Date.parse(new Date()) + 60*1000;
+		})
+		.catch((error) =>
+		{
+			flagTimer = false;
+			conectado = 2;
+			SERIE = "-";
+			LOTE = "-";
+			this.forceUpdate();
+			Alert.alert(
+				"Erro",
+				"Erro durante a comunicação com o dispositivo.",
+				[{ text: "OK", onPress: () => {console.log("OK")}}],
+				{ cancelable: false }
+			);
+			console.log("Error");
+			console.log(error);
+		});
+}
+
 
 class CardsTwo extends React.Component
 {
@@ -210,15 +252,22 @@ class CarregaBluetooth extends React.Component
 			
 			//Envia dados para extensão de tempo
 			const dadosExtensaoTempo = stringToBytes("{dotA:T:B:E}");
+			UUID = this.params.UUID;
 			manager.writeWithoutResponse(this.params.UUID, service, 
 			characteristic, dadosExtensaoTempo)
 				.then(() =>
 				{
+					tempoAtualizacao = Date.parse(new Date()) + 60*1000;
 					console.log("Extensão OK");
+					if(flagTimer == false)
+						setTimeout(() => {atualizaBLE()}, 1000*60);
+					flagTimer = true;
 					this.requestSerie();
+
 				})
 				.catch((error) =>
 				{
+					flagTimer = false;
 					conectado = 2;
 					SERIE = "-";
 					LOTE = "-";
@@ -272,16 +321,18 @@ class CarregaBluetooth extends React.Component
 		{
 			return(<Block style={{ flex: 1, alignItems: 'center'}}>
 				<CardsTwo icone1="bluetooth-b" titulo1="NOME" subtitulo1={this.params.name}
-					icone2="rss" titulo2="CONEXÃO" subtitulo2="Conectado"/>
+					icone2="rss" titulo2="ESTADO" subtitulo2="Conectado"/>
 				<CardsTwo icone1="database" titulo1="LOTE" subtitulo1={LOTE}
 					icone2="link" titulo2="SÉRIE" subtitulo2={SERIE}/>
-				
 				<Button color="#78A59A" center
 					onPress={() => this.props.navigation.navigate('ListWifiPage' ,
 		 					{UUID : this.params.UUID, 
 		 					 serviceParam : service,
 		 					 characteristicParam : characteristic,})}
 					>CONTINUAR</Button>
+				<Button color="#BE5A38" center
+					onPress={() => this.props.navigation.navigate('BluetoothPage')}
+					>VOLTAR</Button>
 				</Block>
 
 			);
@@ -290,7 +341,7 @@ class CarregaBluetooth extends React.Component
 		{
 			return(<Block style={{ flex: 1, alignItems: 'center'}}>
 				<CardsTwo icone1="bluetooth-b" titulo1="NOME" subtitulo1={this.params.name}
-					icone2="rss" titulo2="CONEXÃO" subtitulo2="Erro"/>
+					icone2="rss" titulo2="ESTADO" subtitulo2="Erro"/>
 				<CardsTwo icone1="database" titulo1="LOTE" subtitulo1={LOTE}
 					icone2="link" titulo2="SÉRIE" subtitulo2={SERIE}/>
 				<Button color="#BE5A38" center
@@ -303,7 +354,7 @@ class CarregaBluetooth extends React.Component
 		{
 			return(<Block style={{ flex: 1, alignItems: 'center'}}>
 				<CardsTwo icone1="bluetooth-b" titulo1="NOME" subtitulo1={this.params.name}
-					icone2="rss" titulo2="CONEXÃO" subtitulo2="Sincronizando"/>
+					icone2="rss" titulo2="ESTADO" subtitulo2="Sincronizando"/>
 				<CardsTwo icone1="database" titulo1="LOTE" subtitulo1={LOTE}
 					icone2="link" titulo2="SÉRIE" subtitulo2={SERIE}/>
 				<Button color="#BE5A38" center

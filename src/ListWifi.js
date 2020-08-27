@@ -5,6 +5,7 @@ import {Text, Block, Card, Button, NavBar, theme} from 'galio-framework';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import WifiManager from "react-native-wifi-reborn";
+import RNRestart from 'react-native-restart';
 
 const BASE_SIZE = theme.SIZES.BASE;
 const GRADIENT_BLUE = ['#6B84CA', '#8F44CE'];
@@ -50,6 +51,48 @@ class ListDevices extends React.Component
 		this.retorno = false; //Monitora retorno
 		this.params = this.props.navigation.state.params;
 	}
+
+	finaliza()
+	{
+		const dadosEscrita = stringToBytes("{dotA:T:B:X}");
+		manager.write(this.params.UUID, this.params.serviceParam, 
+		this.params.characteristicParam, dadosEscrita)
+			.then(() =>
+			{
+				manager.disconnect(this.params.UUID)
+					.then(() => {
+						// Success code
+						console.log("Disconnected");
+						RNRestart.Restart();
+					})
+					.catch((error) => 
+					{
+						// Failure code
+						console.log(error);
+						RNRestart.Restart();
+					});
+			})
+			.catch((error) =>
+			{
+				
+				console.log("Error");
+				console.log(error);
+				RNRestart.Restart();
+			});
+	}
+
+	verificaRedes()
+	{
+		if(redes.length <= 0)
+		{
+			Alert.alert(
+				"Erro inesperado",
+				"Ocorreu um erro ao listar as redes WiFi.",
+				[{ text: "OK", onPress: () => this.finaliza() }],
+				{ cancelable: false }
+			);
+		}
+	}
   	
   	componentDidMount()
 	{
@@ -58,8 +101,12 @@ class ListDevices extends React.Component
 		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION).
 		then((result) => 
 		{
+			console.log("Did ListWifi");
 			if (result) //Se permissão for OK
 			{
+
+				setTimeout(() => {this.verificaRedes()}, 10000);
+
 				WifiManager.loadWifiList().then(
 				nets =>
 				{
@@ -93,6 +140,8 @@ class ListDevices extends React.Component
 				{
 					if (result) //Permissão concedida
 					{
+						setTimeout(() => {this.verificaRedes()}, 10000);
+
 						WifiManager.loadWifiList().then(
 						nets =>
 						{

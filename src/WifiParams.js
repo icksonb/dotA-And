@@ -15,7 +15,7 @@ const bleManagerEmitter = new NativeEventEmitter(manager);
 var pass = "";
 var errorMsg = "";
 
-function setSSID(UUID, service, characteristic, SSID)
+function setSSID(navigation, UUID, service, characteristic, SSID)
 {
 	if(pass < 3)
 	{
@@ -32,7 +32,7 @@ function setSSID(UUID, service, characteristic, SSID)
 	manager.write(UUID, service, characteristic, data)
 		.then(() =>
 		{
-			getSSID(UUID, service, characteristic, SSID);
+			getSSID(navigation, UUID, service, characteristic, SSID);
 		})
 		.catch((error) =>
 		{
@@ -42,7 +42,7 @@ function setSSID(UUID, service, characteristic, SSID)
 }
 
 //Recebe valores da comunicação bluetooth
-function getSSID(UUID, service, characteristic, SSID)
+function getSSID(navigation, UUID, service, characteristic, SSID)
 {
 	manager.read(UUID, service, characteristic)
 		.then((data) =>
@@ -57,7 +57,7 @@ function getSSID(UUID, service, characteristic, SSID)
 
 			if(ssidResponse == SSID)
 			{
-				setPass(UUID, service, characteristic);
+				setPass(navigation, UUID, service, characteristic, SSID);
 			}
 			else
 			{
@@ -75,7 +75,7 @@ function getSSID(UUID, service, characteristic, SSID)
 		});
 }
 
-function setPass(UUID, service, characteristic)
+function setPass(navigation, UUID, service, characteristic, SSID)
 {
 	if(pass < 3)
 	{
@@ -92,7 +92,7 @@ function setPass(UUID, service, characteristic)
 	manager.write(UUID, service, characteristic, data)
 		.then(() =>
 		{
-			getPass(UUID, service, characteristic);
+			getPass(navigation, UUID, service, characteristic, SSID);
 		})
 		.catch((error) =>
 		{
@@ -102,7 +102,7 @@ function setPass(UUID, service, characteristic)
 }
 
 //Recebe valores da comunicação bluetooth
-function getPass(UUID, service, characteristic)
+function getPass(navigation, UUID, service, characteristic, SSID)
 {
 	manager.read(UUID, service, characteristic)
 		.then((data) =>
@@ -120,7 +120,10 @@ function getPass(UUID, service, characteristic)
 				Alert.alert(
 					"Sucesso",
 					"Configuração realizada com sucesso",
-					[{ text: "OK", onPress: () => console.log("OK Pressed") }],
+					[{ text: "OK", onPress: () => navigation.navigate('SensoresPage' ,
+		 					{UUID : UUID, 
+		 					 serviceParam : service,
+		 					 characteristicParam : characteristic,}) }],
 					{ cancelable: false }
 				);
 			}
@@ -152,12 +155,17 @@ const WifiParams = ({ navigation }) => (
 				<Text size={BASE_SIZE*1.1} style={styles.textSSID}>SSID: {navigation.state.params.SSID}</Text>
 				<Input placeholder="password" rounded password viewPass 
 				style={{ borderColor: COLOR_GREY }} onChangeText={value => {pass=value}}/>
+				
 				<Button color="#78A59A" 
-					onPress={() => setSSID(navigation.state.params.UUID,
+					onPress={() => setSSID(navigation, navigation.state.params.UUID,
 						navigation.state.params.serviceParam, 
 						navigation.state.params.characteristicParam,
 						navigation.state.params.SSID,)}>
 					CONFIRMAR
+				</Button>
+				<Button color="#BE5A38" 
+					onPress={() => navigation.navigate('ListWifiPage')}>
+					VOLTAR
 				</Button>
 			</Block>
 		</Block>

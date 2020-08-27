@@ -42,14 +42,14 @@ class RenderCard extends React.Component {
 
 let verifica = false;
 let devices = new Array();
-var retorno = false;
+var retorno = 0;
 class ListDevices extends React.Component
 {
 
 	constructor(props) 
 	{
 		super(props);
-		retorno = false; //Monitora retorno
+		retorno = 0; //Monitora retorno
 		this.handleDiscoverPeripheral = this.handleDiscoverPeripheral.bind(this);
 		console.log("Construtor");
 	}
@@ -57,11 +57,11 @@ class ListDevices extends React.Component
   	//Retorno dos dispositivos encontrados
 	handleDiscoverPeripheral(peripheral)
 	{
-		if(retorno == false)
+		if(retorno == 0)
 		{
 			devices = [];
 			devices = [{'name': peripheral.name, 'UUID' : peripheral.id}];
-			retorno = true;
+			retorno = 1;
 		}
 		else
 		{
@@ -99,6 +99,9 @@ class ListDevices extends React.Component
 				//Inicia módulo Bluetooth
 				manager.start({showAlert: false});
 				
+				//Aciona a função para verificar se dispositivos foram encontrados
+				setTimeout(() => {this.verificaListaBluetooth()}, 15000);
+
 				//Realiza o scan dos dispositivos
 				BleManager.scan([], 15, false);
 		 	}
@@ -112,7 +115,10 @@ class ListDevices extends React.Component
 					{
 						//Inicia módulo Bluetooth
 						manager.start({showAlert: false});
-						
+							
+						//Aciona a função para verificar se dispositivos foram encontrados
+						setTimeout(() => {this.verificaListaBluetooth()}, 15000);
+
 						//Realiza o scan dos dispositivos
 						BleManager.scan(devices, 15, false);
 					}
@@ -125,9 +131,17 @@ class ListDevices extends React.Component
 		});
 	}
 
+	verificaListaBluetooth()
+	{
+		if(retorno == 0)
+			retorno = 2;
+
+		this.forceUpdate();
+	}
+
 	printCards()
 	{
-		if(retorno == true && devices)
+		if(retorno == 1 && devices)
 	 	{
 	 		return devices.map(nameDevice =>
 	 		{
@@ -143,17 +157,20 @@ class ListDevices extends React.Component
 	 	}
 	}
 
+
 	refresh()
 	{
 		devices = new Array();
+		retorno = 0;
+		//Aciona a função para verificar se dispositivos foram encontrados
+		setTimeout(() => {this.verificaListaBluetooth()}, 15000);
 		BleManager.scan([], 15, false);
-		retorno = false;
 		this.forceUpdate();
 	}
 
 	render()
 	{
-		if(retorno == false)
+		if(retorno == 0)
 		{
 			return(
 				<View style={{ flex: 1, alignItems: 'center' }}>
@@ -163,6 +180,21 @@ class ListDevices extends React.Component
 		  			</Button>
 					<Text size={BASE_SIZE * 1.125} style={styles.textHeader}>
 						Buscando dispositivos...</Text>
+				</View>
+			);	
+		}
+		else if(retorno == 2)
+		{
+			return(
+				<View style={{ flex: 1, alignItems: 'center' }}>
+					<Button round center style={{ width: 40, height: 40}} color={COLOR_GREY} 
+							onPress={() => this.refresh()}>
+			  			<Icon size={22} name="refresh" color={COLOR_WHITE} />
+		  			</Button>
+					<Text size={BASE_SIZE * 1.125} style={styles.textHeader}>
+						Nenhum dispositivo encontrado.
+						Por favor, verifique o estado do Bluetooth e clique no botão acima
+						para realizar um novo scan dos dispositivos.</Text>
 				</View>
 			);	
 		}
@@ -181,7 +213,6 @@ class ListDevices extends React.Component
 		}
 	}
 }
-
 
 const { width } = Dimensions.get("screen");
 
