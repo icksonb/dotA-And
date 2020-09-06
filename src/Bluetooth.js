@@ -1,19 +1,22 @@
 import React from 'react';
-import {View, StatusBar, Dimensions, StyleSheet, ScrollView, Image,
+import {View, StatusBar, Dimensions, StyleSheet, ScrollView, Image, Alert, 
   PermissionsAndroid, NativeModules, AppState, NativeEventEmitter} from 'react-native';
 import {Text, Block, Card, Button, NavBar, theme} from 'galio-framework';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
-import BleManager from 'react-native-ble-manager';
+/*import BluetoothSerial, {
+  BTEvents,
+  BTCharsets,
+} from 'react-native-bluetooth-classic';*/
+import BluetoothSerial, {
+  withSubscription
+} from "react-native-bluetooth-serial-next";
 
 const BASE_SIZE = theme.SIZES.BASE;
 const GRADIENT_BLUE = ['#6B84CA', '#8F44CE'];
 const GRADIENT_PINK = ['#D442F8', '#B645F5', '#9B40F8'];
 const COLOR_WHITE = theme.COLORS.WHITE;
 const COLOR_GREY = theme.COLORS.MUTED; // '#D8DDE1';
-
-const manager = BleManager;
-const bleManagerEmitter = new NativeEventEmitter(manager);
 
 class RenderCard extends React.Component {
 
@@ -50,60 +53,116 @@ class ListDevices extends React.Component
 	{
 		super(props);
 		retorno = 0; //Monitora retorno
-		this.handleDiscoverPeripheral = this.handleDiscoverPeripheral.bind(this);
 		console.log("Construtor");
 	}
   	
-  	//Retorno dos dispositivos encontrados
-	handleDiscoverPeripheral(peripheral)
+	async startScan()
 	{
-		if(retorno == 0)
+		try
 		{
-			devices = [];
-			devices = [{'name': peripheral.name, 'UUID' : peripheral.id}];
-			retorno = 1;
-		}
-		else
-		{
-			verifica = false;
-			if(devices)
+			console.log("List")
+			const devicesSerial = await BluetoothSerial.list();	
+
+			var peripherals = devicesSerial;
+			for(var aux=0; aux<peripherals.length; aux++)
 			{
-				devices.map(nameDevice =>
+				if(peripherals[aux].name.indexOf("dotA") >= 0)
 				{
-					if(nameDevice.name == peripheral.name)
-						verifica = true;
-				});	
+					var isConnected = false; 
+					try
+					{
+						var teste = await BluetoothSerial.connect(peripherals[aux].id);						
+						isConnected = BluetoothSerial.isConnected();
+					}
+					catch (e)
+					{
+						console.log(e);
+					}
+					
+					if(isConnected)
+					{
+						if(retorno == 0)
+						{
+							devices = [];
+							devices = [{'name':  peripherals[aux].name, 
+										'UUID' :  peripherals[aux].id}];
+							retorno = 1;
+						}
+						else
+						{
+							verifica = false;
+							if(devices)
+							{
+								devices.map(nameDevice =>
+								{
+									if(nameDevice.name ==  peripherals[aux].name)
+										verifica = true;
+								});	
+							}
+							
+							//Verifica se o elemento já existe na lista
+							if(verifica == false)
+							{
+								devices.push({'name':  peripherals[aux].name, 
+									'UUID' :  peripherals[aux].id});
+							}	
+						}
+						await BluetoothSerial.disconnect();
+					}
+
+					
+
+					
+				}
+				this.forceUpdate();
+
 			}
-			
-			//Verifica se o elemento já existe na lista
-			if(verifica == false)
-			{
-				devices.push({'name': peripheral.name, 'UUID' : peripheral.id});
-			}	
+
+			setTimeout(() => {this.verificaListaBluetooth()}, 25000);
+
 		}
-		this.forceUpdate();
+		catch (e)
+		{
+			console.log("Error");
+			console.log(e);
+			Alert.alert(
+				"Scan Error",
+				"Error",
+				[{ text: "OK", onPress: () => {console.log("OK")}}],
+				{ cancelable: false }
+			);
+		}
+		
 	}
 
-	componentDidMount()
+	async componentDidMount()
 	{
-		console.log("Did");
-
-		this.handlerDiscover = bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', this.handleDiscoverPeripheral );
 		
+		console.log("result");
+		await BluetoothSerial.requestEnable();
+
+		console.log("Enable");
+		await BluetoothSerial.isEnabled();
+
 		//Verifica permissão
 		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).
 		then((result) => 
 		{
 			if (result) //Se permissão for OK
 			{
-				//Inicia módulo Bluetooth
-				manager.start({showAlert: false});
 				
-				//Aciona a função para verificar se dispositivos foram encontrados
-				setTimeout(() => {this.verificaListaBluetooth()}, 15000);
-
-				//Realiza o scan dos dispositivos
-				BleManager.scan([], 15, false);
+				
+				try
+				{
+					this.startScan();
+				}
+				catch (e)
+				{
+					console.log("Error");
+					console.log(e);
+				}
+				
+				
 		 	}
 	 		else
 	 		{
@@ -113,17 +172,24 @@ class ListDevices extends React.Component
 				{
 					if (result) //Permissão concedida
 					{
-						//Inicia módulo Bluetooth
-						manager.start({showAlert: false});
-							
-						//Aciona a função para verificar se dispositivos foram encontrados
-						setTimeout(() => {this.verificaListaBluetooth()}, 15000);
-
-						//Realiza o scan dos dispositivos
-						BleManager.scan(devices, 15, false);
+						try
+						{
+							this.startScan();
+						}
+						catch (e)
+						{
+							console.log("Error");
+							console.log(e);
+						}
 					}
 					else 
 					{
+						Alert.alert(
+							"Erro",
+							"Permissão não encontrada.",
+							[{ text: "OK", onPress: () => {console.log("OK")}}],
+							{ cancelable: false }
+						);
 						return "Error";
 					}
 				});
@@ -163,8 +229,8 @@ class ListDevices extends React.Component
 		devices = new Array();
 		retorno = 0;
 		//Aciona a função para verificar se dispositivos foram encontrados
-		setTimeout(() => {this.verificaListaBluetooth()}, 15000);
-		BleManager.scan([], 15, false);
+		setTimeout(() => {this.verificaListaBluetooth()}, 25000);
+		this.startScan();		
 		this.forceUpdate();
 	}
 
@@ -201,14 +267,16 @@ class ListDevices extends React.Component
 		else
 		{
 			return(
-				<View style={{ flex: 1, alignItems: 'center' }}>
-					<Button round center style={{ width: 40, height: 40}} color={COLOR_GREY} 
-							onPress={() => this.refresh()}>
-			  			<Icon size={22} name="refresh" color={COLOR_WHITE} />
-		  			</Button>
+				<ScrollView style={{flex: 1}}>
+					<View style={{ flex: 1, alignItems: 'center' }}>
+						<Button round center style={{ width: 40, height: 40}} color={COLOR_GREY} 
+								onPress={() => this.refresh()}>
+				  			<Icon size={22} name="refresh" color={COLOR_WHITE} />
+			  			</Button>
+					</View>
 		  			<Text size={BASE_SIZE * 1.125} style={styles.textHeader}>SELECIONE O DISPOSITIVO</Text>
 					{this.printCards()}				
-				</View>
+				</ScrollView>
 			);	
 		}
 	}

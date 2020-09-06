@@ -1,11 +1,14 @@
 import React from 'react';
 import { View, NativeEventEmitter, StyleSheet, Image, 
 	Alert, Dimensions, ScrollView} from 'react-native';
-import  BleManager  from 'react-native-ble-manager';
 import {Text, Block, Card, Button, NavBar, theme} from 'galio-framework';
 import { stringToBytes } from "convert-string";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import RNRestart from 'react-native-restart';
+
+import BluetoothSerial, {
+  withSubscription
+} from "react-native-bluetooth-serial-next";
 
 const BASE_SIZE = theme.SIZES.BASE;
 const GRADIENT_BLUE = ['#6B84CA', '#8F44CE'];
@@ -17,8 +20,6 @@ var SERIE = "-";
 var LOTE = "-";
 var CONEXAO = "Sincronizando";
 
-const manager = BleManager;
-const bleManagerEmitter = new NativeEventEmitter(manager);
 var conectado = 0;
 var characteristic = "";
 var service = "";
@@ -67,7 +68,7 @@ class CarregaSensores extends React.Component
 		console.log("constructor Sensores");
 	}
 
-	recarregaLeituras()
+	async recarregaLeituras()
 	{
 		temperaturas = ['-', '-', '-'];
 		tensao = "-";
@@ -78,155 +79,157 @@ class CarregaSensores extends React.Component
 		this.escritaBluetooth();
 	}
 
-	escritaBluetooth()
+	async escritaBluetooth()
 	{
 		var dadosEscrita = "";
 		if(controle == 0)
-			dadosEscrita = stringToBytes("{dotA:V:T:0}");
+			dadosEscrita = "{dotA:V:T:0}";
 		else if(controle == 1)
-			dadosEscrita = stringToBytes("{dotA:V:T:1}");
+			dadosEscrita = "{dotA:V:T:1}";
 		else if(controle == 2)
-			dadosEscrita = stringToBytes("{dotA:V:T:2}");
+			dadosEscrita = "{dotA:V:T:2}";
 		else if(controle == 3)
-			dadosEscrita = stringToBytes("{dotA:V:V:0}");
+			dadosEscrita = "{dotA:V:V:0}";
 		else if(controle == 4)
-			dadosEscrita = stringToBytes("{dotA:V:D:0}");
+			dadosEscrita = "{dotA:V:D:0}";
 		else if(controle == 5)
-			dadosEscrita = stringToBytes("{dotA:V:D:1}");
+			dadosEscrita = "{dotA:V:D:1}";
 		else if(controle == 6)
-			dadosEscrita = stringToBytes("{dotA:V:D:2}");
+			dadosEscrita = "{dotA:V:D:2}";
 		else if(controle == 7)
-			dadosEscrita = stringToBytes("{dotA:V:P:0}");
+			dadosEscrita = "{dotA:V:P:0}";
 
-		manager.write(this.params.UUID, this.params.serviceParam, 
-		this.params.characteristicParam, dadosEscrita)
-			.then(() =>
-			{
-				this.leituraBluetooth();
-			})
-			.catch((error) =>
-			{
-				
-				temperaturas = ['-', '-', '-'];
-				tensao = "-";
-				portas = ['-', '-', '-'];
-				botao = "-";
-				controle = 0;
-				this.forceUpdate();
-				Alert.alert(
-					"Erro",
-					"Erro durante a comunicação com o dispositivo.",
-					[{ text: "OK", onPress: () => {console.log("OK")}}],
-					{ cancelable: false }
-				);
-				console.log("Error");
-				console.log(error);
-			});
+
+		try
+		{
+			await BluetoothSerial.clear();
+			await BluetoothSerial.write(dadosEscrita);
+			console.log("Escreveu");
+			this.leituraBluetooth();
+		}
+		catch (e)
+		{
+			temperaturas = ['-', '-', '-'];
+			tensao = "-";
+			portas = ['-', '-', '-'];
+			botao = "-";
+			controle = 0;
+			this.forceUpdate();
+			Alert.alert(
+				"Erro",
+				"Erro durante a comunicação com o dispositivo.",
+				[{ text: "OK", onPress: () => {console.log("OK")}}],
+				{ cancelable: false }
+			);
+			console.log("Error");
+			console.log(error);
+		}
 	}
 
-	leituraBluetooth()
+	async leituraBluetooth()
 	{
-		manager.read(this.params.UUID, this.params.serviceParam, 
-		this.params.characteristicParam)
-			.then((data) =>
-			{
-				console.log("Lote: " + data);
+		try
+		{
+			console.log("leituraBluetooth");
+			await BluetoothSerial.readEvery
+			(
+				(data, intervalId) => 
+				{
+					console.log(data);
+					clearInterval(intervalId); 
+					if(data.length > 1)
+					{
+						var buffer = "";
+					    /*for(var aux = 0; aux < data.length; aux++)
+					    	buffer += String.fromCharCode(data[aux]);*/
 
-			    var buffer = "";
-			    for(var aux = 0; aux < data.length; aux++)
-			    	buffer += String.fromCharCode(data[aux]);
+					    buffer = data.split(":")[2];
 
-			    buffer = buffer.replace("{", "");
-			    buffer = buffer.replace("}", "");
+					    buffer = buffer.replace("{", "");
+					    buffer = buffer.replace("}", "");
 
-			    if(controle == 0)
-			    	temperaturas[0] = buffer + "ºC";
-			    else if(controle == 1)
-			    	temperaturas[1] = buffer + "ºC";
-			    else if(controle == 2)
-			    	temperaturas[2] = buffer + "ºC";
-			    else if(controle == 3)
-			    	tensao = buffer + "V";
-			    else if(controle == 4 && buffer == "0")
-			    	portas[0] = "Closed";
-			    else if(controle == 4 && buffer == "1")
-			    	portas[0] = "Open";
-			    else if(controle == 5 && buffer == "0")
-			    	portas[1] = "Closed";
-			    else if(controle == 5 && buffer == "1")
-			    	portas[1] = "Open";
-			    else if(controle == 6 && buffer == "0")
-			    	portas[2] = "Closed";
-			    else if(controle == 6 && buffer == "1")
-			    	portas[2] = "Open";
-			    else if(controle == 7 && buffer == "0")
-			    	botao = "Pushed";
-			    else if(controle == 7 && buffer == "1")
-			    	botao = "Normal";
-			    
-			    controle++;
-			    
-			    if(controle >= 8)
-			    {
-			    	this.forceUpdate();
-			    	controle = 0;
-			    }
-			    else
-			    	this.escritaBluetooth();
-			    
-			    
-			})
-			.catch((error) => 
-			{
-				temperaturas = ['-', '-', '-'];
-				tensao = "-";
-				portas = ['-', '-', '-'];
-				botao = "-";
-				controle = 0;
-				this.forceUpdate();
-				Alert.alert(
-					"Erro",
-					"Erro durante a comunicação com o dispositivo.",
-					[{ text: "OK", onPress: () => {console.log("OK")}}],
-					{ cancelable: false }
-				);
-				console.log("Error");
-				console.log(error);
-			});
+					    if(controle == 0)
+					    	temperaturas[0] = buffer + "ºC";
+					    else if(controle == 1)
+					    	temperaturas[1] = buffer + "ºC";
+					    else if(controle == 2)
+					    	temperaturas[2] = buffer + "ºC";
+					    else if(controle == 3)
+					    	tensao = buffer + "V";
+					    else if(controle == 4 && buffer == "0")
+					    	portas[0] = "Closed";
+					    else if(controle == 4 && buffer == "1")
+					    	portas[0] = "Open";
+					    else if(controle == 5 && buffer == "0")
+					    	portas[1] = "Closed";
+					    else if(controle == 5 && buffer == "1")
+					    	portas[1] = "Open";
+					    else if(controle == 6 && buffer == "0")
+					    	portas[2] = "Closed";
+					    else if(controle == 6 && buffer == "1")
+					    	portas[2] = "Open";
+					    else if(controle == 7 && buffer == "0")
+					    	botao = "Pushed";
+					    else if(controle == 7 && buffer == "1")
+					    	botao = "Normal";
+					    
+					    controle++;
+					    
+					    if(controle >= 8)
+					    {
+					    	this.forceUpdate();
+					    	controle = 0;
+					    }
+					    else
+					    	this.escritaBluetooth();
+					}
+
+				}, 1000, "}"
+			);
+		}
+		catch (e)
+		{
+			temperaturas = ['-', '-', '-'];
+			tensao = "-";
+			portas = ['-', '-', '-'];
+			botao = "-";
+			controle = 0;
+			this.forceUpdate();
+			Alert.alert(
+				"Erro",
+				"Erro durante a comunicação com o dispositivo.",
+				[{ text: "OK", onPress: () => {console.log("OK")}}],
+				{ cancelable: false }
+			);
+			console.log("Error");
+			console.log(error);
+		}
 	}
 
-	componentDidMount()
+	async componentDidMount()
 	{
 		this.escritaBluetooth();
+		console.log("Teste");
 	}
 	
-	finalizaApp()
+	async finalizaApp()
 	{
-		const dadosEscrita = stringToBytes("{dotA:T:B:X}");
-		manager.write(this.params.UUID, this.params.serviceParam, 
-		this.params.characteristicParam, dadosEscrita)
-			.then(() =>
-			{
-				manager.disconnect(this.params.UUID)
-					.then(() => {
-						// Success code
-						console.log("Disconnected");
-						RNRestart.Restart();
-					})
-					.catch((error) => 
-					{
-						// Failure code
-						console.log(error);
-						RNRestart.Restart();
-					});
-			})
-			.catch((error) =>
-			{
-				
-				console.log("Error");
-				console.log(error);
-				RNRestart.Restart();
-			});
+		console.log("Finaliza");
+		const dadosEscrita = "{dotA:T:B:X}";
+
+		try
+		{
+			await BluetoothSerial.write(dadosEscrita);
+			await BluetoothSerial.disconnect();	
+			RNRestart.Restart();
+		}
+		catch (e)
+		{			
+			console.log("Error");
+			console.log(error);
+			RNRestart.Restart();
+		}
+			
 
 		
 	}

@@ -52,33 +52,23 @@ class ListDevices extends React.Component
 		this.params = this.props.navigation.state.params;
 	}
 
-	finaliza()
+	async finaliza()
 	{
-		const dadosEscrita = stringToBytes("{dotA:T:B:X}");
-		manager.write(this.params.UUID, this.params.serviceParam, 
-		this.params.characteristicParam, dadosEscrita)
-			.then(() =>
-			{
-				manager.disconnect(this.params.UUID)
-					.then(() => {
-						// Success code
-						console.log("Disconnected");
-						RNRestart.Restart();
-					})
-					.catch((error) => 
-					{
-						// Failure code
-						console.log(error);
-						RNRestart.Restart();
-					});
-			})
-			.catch((error) =>
-			{
-				
-				console.log("Error");
-				console.log(error);
-				RNRestart.Restart();
-			});
+		const dadosEscrita = "{dotA:T:B:X}";
+
+		try
+		{
+			await BluetoothSerial.write(dadosEscrita);
+			await BluetoothSerial.disconnect();	
+			RNRestart.Restart();
+		}
+		catch (e)
+		{			
+			console.log("Error");
+			console.log(error);
+			RNRestart.Restart();
+		}
+		
 	}
 
 	verificaRedes()
@@ -180,8 +170,6 @@ class ListDevices extends React.Component
 		 				<ListWifiCards title={nameDevice} subtitle="Disponível"
 		 					funcao={() => this.props.navigation.navigate('WifiParamsPage' ,
 		 					{UUID : this.params.UUID, 
-		 					 serviceParam : this.params.serviceParam,
-		 					 characteristicParam : this.params.characteristicParam,
 		 					 SSID: nameDevice, })}/>
 		 			);
 		 		}

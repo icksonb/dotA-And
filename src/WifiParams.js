@@ -1,21 +1,117 @@
 import React from 'react';
 import { View, NativeEventEmitter, StyleSheet, Image, Alert, } from 'react-native';
-import  BleManager  from 'react-native-ble-manager';
 import {Text, Block, Card, Button, NavBar, theme, Input} from 'galio-framework';
 import { stringToBytes } from "convert-string";
-
+import BluetoothSerial, {
+  withSubscription
+} from "react-native-bluetooth-serial-next";
 const BASE_SIZE = theme.SIZES.BASE;
 const GRADIENT_BLUE = ['#6B84CA', '#8F44CE'];
 const GRADIENT_PINK = ['#D442F8', '#B645F5', '#9B40F8'];
 const COLOR_WHITE = theme.COLORS.WHITE;
 const COLOR_GREY = theme.COLORS.MUTED; // '#D8DDE1';
 
-const manager = BleManager;
-const bleManagerEmitter = new NativeEventEmitter(manager);
 var pass = "";
 var errorMsg = "";
 
-function setSSID(navigation, UUID, service, characteristic, SSID)
+function setConfigs(navigation, UUID, SSID)
+{
+	setSSID(navigation, UUID, SSID);
+}
+
+async function setSSID(navigation, UUID, SSID)
+{
+	if(pass < 3)
+	{
+		Alert.alert(
+			"Erro",
+			"Verifique o tamanho da senha",
+			[{ text: "OK", onPress: () => console.log("OK Pressed") }],
+			{ cancelable: false }
+		);
+	}
+	else
+	{
+		try
+		{
+			await BluetoothSerial.clear();
+			var dataStr = "{dotA:D:S:" + SSID + "}\r\n";
+			await BluetoothSerial.write(dataStr);
+			await BluetoothSerial.readEvery
+			(
+				(data, intervalId) => 
+				{
+					clearInterval(intervalId); 
+					getSSID(navigation, UUID, SSID);
+				}, 1000, "}"
+			);
+		}
+		catch(e)
+		{
+			console.log("Error");
+			console.log(e);
+			Alert.alert(
+				"Erro inesperado",
+				"Ocorreu um erro ao se comunicar com o dispositivo.",
+				[{ text: "OK", onPress: () => console.log("OK") }],
+				{ cancelable: false }
+			);
+		}	
+	}
+	
+	
+	
+}
+
+//Recebe valores da comunicação bluetooth
+async function getSSID(navigation, UUID, SSID)
+{
+	try
+	{
+		await BluetoothSerial.clear();
+		var dataStr = "{dotA:G:S}\r\n";
+		await BluetoothSerial.write(dataStr);
+		await BluetoothSerial.readEvery
+		(
+			(data, intervalId) => 
+			{
+				clearInterval(intervalId);
+				var ssidRes = data.replace("{", "");
+				ssidRes = ssidRes.replace("}", "");
+				ssidRes = ssidRes.replace("\r", "");
+				ssidRes = ssidRes.replace("\n", "");
+				console.log(ssidRes);
+				console.log(SSID);
+				if(SSID == ssidRes)
+				{
+					setPASS(navigation, UUID, SSID);
+				}
+				else
+				{
+					Alert.alert(
+						"Erro inesperado",
+						"O SSID não corresponde ao configurado.",
+						[{ text: "OK", onPress: () => console.log("OK") }],
+						{ cancelable: false }
+					);
+				}
+			}, 1000, "\r\n"
+		);
+	}
+	catch(e)
+	{
+		console.log("Error");
+		console.log(e);
+		Alert.alert(
+			"Erro inesperado",
+			"Ocorreu um erro ao se comunicar com o dispositivo.",
+			[{ text: "OK", onPress: () => console.log("OK") }],
+			{ cancelable: false }
+		);
+	}
+}
+
+async function setPASS(navigation, UUID, SSID)
 {
 	if(pass < 3)
 	{
@@ -27,122 +123,85 @@ function setSSID(navigation, UUID, service, characteristic, SSID)
 		);
 		return;
 	}
-	var dataStr = "{dotA:D:S:" + SSID + "}";
-	const data = stringToBytes(dataStr);
-	manager.write(UUID, service, characteristic, data)
-		.then(() =>
-		{
-			getSSID(navigation, UUID, service, characteristic, SSID);
-		})
-		.catch((error) =>
-		{
-			console.log("Error WiFi");
-			console.log(error);
-		});
-}
-
-//Recebe valores da comunicação bluetooth
-function getSSID(navigation, UUID, service, characteristic, SSID)
-{
-	manager.read(UUID, service, characteristic)
-		.then((data) =>
-		{
-			var buffer = "";
-		    for(var aux = 0; aux < data.length; aux++)
-		    	buffer += String.fromCharCode(data[aux]);
-
-		    console.log("WiFi: " + buffer);
-			var ssidResponse = buffer.replace("{dotA:D:S:", "")
-			ssidResponse = ssidResponse.replace("}", "")
-
-			if(ssidResponse == SSID)
-			{
-				setPass(navigation, UUID, service, characteristic, SSID);
-			}
-			else
-			{
-				Alert.alert(
-					"Erro",
-					"SSID não confere",
-					[{ text: "OK", onPress: () => console.log("OK Pressed") }],
-					{ cancelable: false }
-				);
-			}
-		})
-		.catch((error) => {
-			console.log("Error WiFi");
-			console.log(error);
-		});
-}
-
-function setPass(navigation, UUID, service, characteristic, SSID)
-{
-	if(pass < 3)
+	try
 	{
+		await BluetoothSerial.clear();
+		var dataStr = "{dotA:D:P:" + pass + "}\r\n";
+		await BluetoothSerial.write(dataStr);
+		await BluetoothSerial.readEvery
+		(
+			(data, intervalId) => 
+			{
+				clearInterval(intervalId); 
+				getPass(navigation, UUID, SSID);
+			}, 1000, "}"
+		);
+	}
+	catch(e)
+	{
+		console.log("Error");
+		console.log(e);
 		Alert.alert(
-			"Erro",
-			"Verifique o tamanho da senha",
-			[{ text: "OK", onPress: () => console.log("OK Pressed") }],
+			"Erro inesperado",
+			"Ocorreu um erro ao se comunicar com o dispositivo.",
+			[{ text: "OK", onPress: () => console.log("OK") }],
 			{ cancelable: false }
 		);
-		return;
 	}
-	var dataStr = "{dotA:D:P:" + pass + "}";
-	const data = stringToBytes(dataStr);
-	manager.write(UUID, service, characteristic, data)
-		.then(() =>
-		{
-			getPass(navigation, UUID, service, characteristic, SSID);
-		})
-		.catch((error) =>
-		{
-			console.log("Error WiFi");
-			console.log(error);
-		});
 }
 
 //Recebe valores da comunicação bluetooth
-function getPass(navigation, UUID, service, characteristic, SSID)
+async function getPass(navigation, UUID, SSID)
 {
-	manager.read(UUID, service, characteristic)
-		.then((data) =>
-		{
-			var buffer = "";
-		    for(var aux = 0; aux < data.length; aux++)
-		    	buffer += String.fromCharCode(data[aux]);
-
-		    console.log("WiFi: " + buffer);
-			var passResponse = buffer.replace("{dotA:D:P:", "")
-			passResponse = passResponse.replace("}", "")
-
-			if(passResponse == pass)
+	try
+	{
+		await BluetoothSerial.clear();
+		var dataStr = "{dotA:G:P}\r\n";
+		await BluetoothSerial.write(dataStr);
+		await BluetoothSerial.readEvery
+		(
+			(data, intervalId) => 
 			{
-				Alert.alert(
-					"Sucesso",
-					"Configuração realizada com sucesso",
-					[{ text: "OK", onPress: () => navigation.navigate('SensoresPage' ,
-		 					{UUID : UUID, 
-		 					 serviceParam : service,
-		 					 characteristicParam : characteristic,}) }],
-					{ cancelable: false }
-				);
-			}
-			else
-			{
-				Alert.alert(
-					"Erro",
-					"Senha não confere",
-					[{ text: "OK", onPress: () => console.log("OK Pressed") }],
-					{ cancelable: false }
-				);
-			}				
-				
-		})
-		.catch((error) => {
-			console.log("Error WiFi");
-			console.log(error);
-		});
-			
+				clearInterval(intervalId);
+				var passResponse = data.replace("{", "");
+				passResponse = passResponse.replace("}", "");
+				passResponse = passResponse.replace("\r", "");
+				passResponse = passResponse.replace("\n", "");
+				console.log(pass);
+				console.log(passResponse);
+				if(pass == passResponse)
+				{
+					Alert.alert(
+						"Sucesso",
+						"Configuração realizada com sucesso",
+						[{ text: "OK", onPress: () => navigation.navigate('SensoresPage' ,
+			 					{UUID : UUID, }) }],
+						{ cancelable: false }
+					);
+				}
+				else
+				{
+					Alert.alert(
+						"Erro",
+						"Senha não confere",
+						[{ text: "OK", onPress: () => console.log("OK Pressed") }],
+						{ cancelable: false }
+					);
+				}			
+			}, 1000, "\r\n"
+		);
+	}
+	catch(e)
+	{
+		console.log("Error");
+		console.log(e);
+		Alert.alert(
+			"Erro inesperado",
+			"Ocorreu um erro ao se comunicar com o dispositivo.",
+			[{ text: "OK", onPress: () => console.log("OK") }],
+			{ cancelable: false }
+		);
+	}
 			
 }
 
@@ -157,10 +216,8 @@ const WifiParams = ({ navigation }) => (
 				style={{ borderColor: COLOR_GREY }} onChangeText={value => {pass=value}}/>
 				
 				<Button color="#78A59A" 
-					onPress={() => setSSID(navigation, navigation.state.params.UUID,
-						navigation.state.params.serviceParam, 
-						navigation.state.params.characteristicParam,
-						navigation.state.params.SSID,)}>
+					onPress={() => setConfigs(navigation, navigation.state.params.UUID,
+						navigation.state.params.SSID)}>
 					CONFIRMAR
 				</Button>
 				<Button color="#BE5A38" 

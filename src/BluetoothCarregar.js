@@ -1,10 +1,16 @@
 import React from 'react';
 import { View, NativeEventEmitter, StyleSheet, Image, 
 	Alert, Dimensions} from 'react-native';
-import  BleManager  from 'react-native-ble-manager';
 import {Text, Block, Card, Button, NavBar, theme} from 'galio-framework';
 import { stringToBytes } from "convert-string";
 import Icon from 'react-native-vector-icons/FontAwesome';
+/*import BluetoothSerial, {
+  BTEvents,
+  BTCharsets,
+} from 'react-native-bluetooth-classic';*/
+import BluetoothSerial, {
+  withSubscription
+} from "react-native-bluetooth-serial-next";
 
 const BASE_SIZE = theme.SIZES.BASE;
 const GRADIENT_BLUE = ['#6B84CA', '#8F44CE'];
@@ -16,8 +22,6 @@ var SERIE = "-";
 var LOTE = "-";
 var CONEXAO = "Sincronizando";
 
-const manager = BleManager;
-const bleManagerEmitter = new NativeEventEmitter(manager);
 var conectado = 0;
 var characteristic = "";
 var service = "";
@@ -26,7 +30,7 @@ var tempoAtualizacao = 0;
 var flagTimer = false;
 const { height, width } = Dimensions.get('screen');
 
-function atualizaBLE()
+async function atualizaBLE()
 {
 	const tempoAgora = Date.parse(new Date());
 	//Não chegou no tempo e enviar a nova solicitação
@@ -36,33 +40,39 @@ function atualizaBLE()
 		setTimeout(() => {atualizaBLE()}, 1000*10);
 		return;
 	}
-	//Envia dados para extensão de tempo
-	const dadosExtensaoTempo = stringToBytes("{dotA:T:B:E}");
-	manager.writeWithoutResponse(UUID, service, 
-	characteristic, dadosExtensaoTempo)
-		.then(() =>
-		{
-			console.log("Extensão OK");
-			setTimeout(() => {atualizaBLE()}, 1000*10);
-			//Atualização em 1 min
-			tempoAtualizacao = Date.parse(new Date()) + 60*1000;
-		})
-		.catch((error) =>
-		{
-			flagTimer = false;
-			conectado = 2;
-			SERIE = "-";
-			LOTE = "-";
-			this.forceUpdate();
-			Alert.alert(
-				"Erro",
-				"Erro durante a comunicação com o dispositivo.",
-				[{ text: "OK", onPress: () => {console.log("OK")}}],
-				{ cancelable: false }
-			);
-			console.log("Error");
-			console.log(error);
-		});
+	try
+	{
+		//Envia dados para extensão de tempo
+		await BluetoothSerial.write("{dotA:T:B:E}");
+		await BluetoothSerial.readEvery
+		(
+			(data, intervalId) => 
+			{
+				
+				clearInterval(intervalId); 
+				var buffer = data.replace("\r", "");
+				buffer = buffer.replace("\n", "");
+				console.log("Extend time");
+				console.log(buffer);
+				if(buffer == "{CFGOK}")
+				{
+					tempoAtualizacao = Date.parse(new Date()) + 50*1000;
+					setTimeout(() => {atualizaBLE()}, 1000*10);
+				}
+				else
+				{
+					flagTimer = false;
+				}
+				
+			}, 
+			1000, "}"
+		);
+	}
+	catch(e)
+	{
+		flagTimer = false;
+		console.log("Error atualiza BLE");
+	}
 }
 
 
@@ -100,217 +110,152 @@ class CarregaBluetooth extends React.Component
 		super(props);
 		conectado = 0;
 		this.params = this.props.navigation.state.params;
-		manager.stopScan();
 	}
 
-	//Requisita número de série
-	requestSerie()
+	async getLote()
 	{
-		const data = stringToBytes("{dotA:G:I}");
-		manager.write(this.params.UUID, service, 
-		characteristic, data)
-			.then(() =>
-			{
-				this.getSerie();
-			})
-			.catch((error) =>
-			{
-				conectado = 2;
-				SERIE = "-";
-				LOTE = "-";
-				this.forceUpdate();
-				Alert.alert(
-					"Erro",
-					"Erro durante a comunicação com o dispositivo.",
-					[{ text: "OK", onPress: () => {console.log("OK")}}],
-					{ cancelable: false }
-				);
-				console.log(error);
-			});
-	}
-
-	//Recebe valores da comunicação bluetooth
-	getSerie()
-	{
-		manager.read(this.params.UUID, service, characteristic)
-			.then((data) =>
-			{
-				console.log("Serie: " + data);
-
-			    var buffer = "";
-			    for(var aux = 0; aux < data.length; aux++)
-			    	buffer += String.fromCharCode(data[aux]);
-
-			    SERIE = buffer.replace("{", "");
-			    SERIE = SERIE.replace("}", "");
-
-			    this.requestLote();
-
-			    
-			})
-			.catch((error) => {
-				conectado = 2;
-				SERIE = "-";
-				LOTE = "-";
-				this.forceUpdate();
-				Alert.alert(
-					"Erro",
-					"Erro durante a comunicação com o dispositivo.",
-					[{ text: "OK", onPress: () => {console.log("OK")}}],
-					{ cancelable: false }
-				);
-				console.log("Error Serie");
-				console.log(error);
-			});
-	}
-
-	//Requisita número de lote
-	requestLote()
-	{
-		const data = stringToBytes("{dotA:G:L}");
-		manager.write(this.params.UUID, service, 
-		characteristic, data)
-			.then(() =>
-			{
-				this.getLote();
-			})
-			.catch((error) =>
-			{
-				conectado = 2;
-				SERIE = "-";
-				LOTE = "-";
-				this.forceUpdate();
-				Alert.alert(
-					"Erro",
-					"Erro durante a comunicação com o dispositivo.",
-					[{ text: "OK", onPress: () => {console.log("OK")}}],
-					{ cancelable: false }
-				);
-				console.log("Error lote");
-				console.log(error);
-			});
-	}
-
-	//Recebe valores da comunicação bluetooth
-	getLote()
-	{
-		manager.read(this.params.UUID, service, characteristic)
-			.then((data) =>
-			{
-				console.log("Lote: " + data);
-
-			    var buffer = "";
-			    for(var aux = 0; aux < data.length; aux++)
-			    	buffer += String.fromCharCode(data[aux]);
-
-			    LOTE = buffer.replace("{", "");
-			    LOTE = LOTE.replace("}", "");
-			    conectado = 1;
-			    this.forceUpdate();
-			    
-			    
-			})
-			.catch((error) => {
-				conectado = 2;
-				SERIE = "-";
-				LOTE = "-";
-				this.forceUpdate();
-				Alert.alert(
-					"Erro",
-					"Erro durante a comunicação com o dispositivo.",
-					[{ text: "OK", onPress: () => {console.log("OK")}}],
-					{ cancelable: false }
-				);
-				console.log("Error lote");
-				console.log(error);
-			});
-	}
-
-	getAllServicesAndCharacteristics()
-	{
-		var arrayCharacteristics = "";
-
-		manager.retrieveServices(this.params.UUID).
-		then((peripheralInfo) => 
+		try
 		{
-			arrayCharacteristics = JSON.stringify(peripheralInfo);
-			arrayCharacteristics = arrayCharacteristics.replace("Peripheral info: ", "");
-			arrayCharacteristics = arrayCharacteristics.replace("[Array]", "[]");
-			arrayCharacteristics = arrayCharacteristics.replace("[Object]", "[]");
-			const obj = JSON.parse(arrayCharacteristics);
-			const characteristics = obj.characteristics;
-			
-			for(var aux = 0; aux < characteristics.length; aux++)
-			{
-				if(characteristics[aux].characteristic.length > 5)
+			await BluetoothSerial.clear();
+			await BluetoothSerial.write("{dotA:G:L}\r\n");
+			await BluetoothSerial.readEvery
+			(
+				(data, intervalId) => 
 				{
-					characteristic = characteristics[aux].characteristic;
-					service = characteristics[aux].service;
-					break;
-				}
-			}
-			
-			//Envia dados para extensão de tempo
-			const dadosExtensaoTempo = stringToBytes("{dotA:T:B:E}");
-			UUID = this.params.UUID;
-			manager.writeWithoutResponse(this.params.UUID, service, 
-			characteristic, dadosExtensaoTempo)
-				.then(() =>
-				{
-					tempoAtualizacao = Date.parse(new Date()) + 60*1000;
-					console.log("Extensão OK");
-					if(flagTimer == false)
-						setTimeout(() => {atualizaBLE()}, 1000*60);
-					flagTimer = true;
-					this.requestSerie();
+					console.log("Lote");
+					console.log(data);
+					clearInterval(intervalId); 
+					LOTE = data.replace("{", "");
+					LOTE = LOTE.replace("}", "");
+					LOTE = LOTE.replace("\r", "");
+					LOTE = LOTE.replace("\n", "");
 
-				})
-				.catch((error) =>
-				{
-					flagTimer = false;
-					conectado = 2;
-					SERIE = "-";
-					LOTE = "-";
+					if(LOTE.length <= 1)
+					{
+						conectado = 2;
+						SERIE = "-";
+						LOTE = "-";
+					}
+					
 					this.forceUpdate();
-					Alert.alert(
-						"Erro",
-						"Erro durante a comunicação com o dispositivo.",
-						[{ text: "OK", onPress: () => {console.log("OK")}}],
-						{ cancelable: false }
-					);
-					console.log("Error");
-					console.log(error);
-				});
-
+				}, 1000, "\r\n"
+			);
 		}
-		);
-	}
-
-	componentDidMount()
-	{
-		manager.connect(this.params.UUID, null)
-		.then(() => 
-		{
-			console.log(conectado);
-			this.getAllServicesAndCharacteristics();
-
-		})
-		.catch((error) => 
+		catch(e)
 		{
 			conectado = 2;
 			SERIE = "-";
 			LOTE = "-";
 			this.forceUpdate();
-			Alert.alert(
-				"Erro",
-				"Erro durante a comunicação com o dispositivo.",
-				[{ text: "OK", onPress: () => {console.log("OK")}}],
-				{ cancelable: false }
+			console.log("Error");
+			console.log(e);
+		}
+
+	}
+
+	async getSerie()
+	{
+		try
+		{
+			await BluetoothSerial.clear();
+			await BluetoothSerial.write("{dotA:G:I}\r\n");
+			await BluetoothSerial.readEvery
+			(
+				(data, intervalId) => 
+				{
+					console.log("Serie");
+					clearInterval(intervalId); 
+					SERIE = data.replace("{", "");
+					SERIE = SERIE.replace("}", "");
+					SERIE = SERIE.replace("\r", "");
+					SERIE = SERIE.replace("\n", "");
+					if(SERIE.length <= 1)
+					{
+						conectado = 2;
+						SERIE = "-";
+						LOTE = "-";
+						this.forceUpdate();
+					}
+					else
+						this.getLote();
+				}, 1000, "\r\n"
 			);
-			console.log("Erro conect");
-			console.log(error);
+		}
+		catch(e)
+		{
+			conectado = 2;
+			SERIE = "-";
+			LOTE = "-";
 			this.forceUpdate();
-		});
+			console.log("Error");
+			console.log(e);
+		}
+	}
+
+	async componentDidMount()
+	{
+		try
+		{
+			const connected = await BluetoothSerial.connect(this.params.UUID);
+
+			const isConnected = await BluetoothSerial.isConnected();
+
+			if(isConnected)
+			{
+				tempoAtualizacao = Date.parse(new Date()) + 50*1000;
+
+				console.log("Conectado");
+				conectado = 1;
+				await BluetoothSerial.write("{dotA:T:B:E}");
+				await BluetoothSerial.readEvery
+				(
+					(data, intervalId) => 
+					{
+						console.log(data); 
+						clearInterval(intervalId); 
+						var buffer = data.replace("\r", "");
+						buffer = buffer.replace("\n", "");
+						if(buffer == "{CFGOK}")
+						{
+							if(flagTimer == false)
+							{
+								setTimeout(() => {atualizaBLE()}, 1000*20);
+								flagTimer = true;
+							}
+							this.getSerie();
+						}
+						else
+						{
+							conectado = 2;
+							SERIE = "-";
+							LOTE = "-";
+							this.forceUpdate();
+						}
+					}, 
+					1000, "}"
+				);
+
+			}
+			else
+			{
+				conectado = 2;
+				SERIE = "-";
+				LOTE = "-";
+				this.forceUpdate();
+			}
+
+
+		}
+		catch (e)
+		{
+			flagTimer = false;
+			conectado = 2;
+			SERIE = "-";
+			LOTE = "-";
+			this.forceUpdate();
+			console.log("Error");
+			console.log(e);
+		}
 		
 	}
 
@@ -326,13 +271,13 @@ class CarregaBluetooth extends React.Component
 					icone2="link" titulo2="SÉRIE" subtitulo2={SERIE}/>
 				<Button color="#78A59A" center
 					onPress={() => this.props.navigation.navigate('ListWifiPage' ,
-		 					{UUID : this.params.UUID, 
-		 					 serviceParam : service,
-		 					 characteristicParam : characteristic,})}
-					>CONTINUAR</Button>
+		 					{UUID : this.params.UUID,})}>CONTINUAR
+				</Button>
 				<Button color="#BE5A38" center
 					onPress={() => this.props.navigation.navigate('BluetoothPage')}
-					>VOLTAR</Button>
+					>VOLTAR
+				</Button>
+				
 				</Block>
 
 			);
