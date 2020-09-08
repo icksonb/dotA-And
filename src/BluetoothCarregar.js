@@ -36,8 +36,8 @@ async function atualizaBLE()
 	//Não chegou no tempo e enviar a nova solicitação
 	if(tempoAgora < tempoAtualizacao)
 	{
-		//Habilita para mais 10s
-		setTimeout(() => {atualizaBLE()}, 1000*10);
+		//Habilita para mais 30s
+		setTimeout(() => {atualizaBLE()}, 1000*30);
 		return;
 	}
 	try
@@ -56,8 +56,9 @@ async function atualizaBLE()
 				console.log(buffer);
 				if(buffer == "{CFGOK}")
 				{
-					tempoAtualizacao = Date.parse(new Date()) + 50*1000;
-					setTimeout(() => {atualizaBLE()}, 1000*10);
+					//Espera 4 minutos
+					tempoAtualizacao = Date.parse(new Date()) + 4*60*1000;
+					setTimeout(() => {atualizaBLE()}, 1000*30);
 				}
 				else
 				{
@@ -202,7 +203,7 @@ class CarregaBluetooth extends React.Component
 
 			if(isConnected)
 			{
-				tempoAtualizacao = Date.parse(new Date()) + 50*1000;
+				tempoAtualizacao = Date.parse(new Date()) + 4*60*1000;
 
 				console.log("Conectado");
 				conectado = 1;
@@ -219,7 +220,7 @@ class CarregaBluetooth extends React.Component
 						{
 							if(flagTimer == false)
 							{
-								setTimeout(() => {atualizaBLE()}, 1000*20);
+								setTimeout(() => {atualizaBLE()}, 1000*30);
 								flagTimer = true;
 							}
 							this.getSerie();

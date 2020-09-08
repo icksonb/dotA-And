@@ -148,13 +148,22 @@ class CarregaSensores extends React.Component
 					    buffer = buffer.replace("{", "");
 					    buffer = buffer.replace("}", "");
 
-					    if(controle == 0)
+					    if(buffer.indexOf("-127") >= 0)
+					    	buffer = "N/C";
+
+					    if(controle == 0 && buffer != "N/C")
 					    	temperaturas[0] = buffer + "ºC";
-					    else if(controle == 1)
+					    else if(controle == 0)
+					    	temperaturas[0] = buffer;
+					    if(controle == 1 && buffer != "N/C")
 					    	temperaturas[1] = buffer + "ºC";
-					    else if(controle == 2)
+					    else if(controle == 1)
+					    	temperaturas[1] = buffer;
+					    if(controle == 2 && buffer != "N/C")
 					    	temperaturas[2] = buffer + "ºC";
-					    else if(controle == 3)
+					    else if(controle == 2)
+					    	temperaturas[2] = buffer;
+						else if(controle == 3)
 					    	tensao = buffer + "V";
 					    else if(controle == 4 && buffer == "0")
 					    	portas[0] = "Closed";
@@ -212,14 +221,11 @@ class CarregaSensores extends React.Component
 		console.log("Teste");
 	}
 	
-	async finalizaApp()
+	async disconectaBL()
 	{
-		console.log("Finaliza");
-		const dadosEscrita = "{dotA:T:B:X}";
-
 		try
 		{
-			await BluetoothSerial.write(dadosEscrita);
+			console.log("disconnect");
 			await BluetoothSerial.disconnect();	
 			RNRestart.Restart();
 		}
@@ -229,8 +235,41 @@ class CarregaSensores extends React.Component
 			console.log(error);
 			RNRestart.Restart();
 		}
-			
+	}
 
+	async enviaComandoDisconectaBL()
+	{
+		try
+		{
+			var dadosEscrita = "{dotA:T:B:X}"; 
+			await BluetoothSerial.write(dadosEscrita);
+			console.log(dadosEscrita);
+			setTimeout(() => {this.disconectaBL()}, 1000);
+		}
+		catch (e)
+		{			
+			console.log("Error");
+			console.log(error);
+			RNRestart.Restart();
+		}
+	}
+
+	async finalizaApp()
+	{
+		console.log("Finaliza");
+		try
+		{
+			var dadosEscrita = "{dotA:T:B:U}"; //Para gravar na memória
+			await BluetoothSerial.write(dadosEscrita);
+			console.log(dadosEscrita);
+			setTimeout(() => {this.enviaComandoDisconectaBL()}, 500);
+		}
+		catch (e)
+		{			
+			console.log("Error");
+			console.log(error);
+			RNRestart.Restart();
+		}
 		
 	}
 
