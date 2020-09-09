@@ -244,7 +244,7 @@ class CarregaSensores extends React.Component
 			var dadosEscrita = "{dotA:T:B:X}"; 
 			await BluetoothSerial.write(dadosEscrita);
 			console.log(dadosEscrita);
-			setTimeout(() => {this.disconectaBL()}, 1000);
+			setTimeout(() => {this.disconectaBL()}, 2500);
 		}
 		catch (e)
 		{			
@@ -259,10 +259,10 @@ class CarregaSensores extends React.Component
 		console.log("Finaliza");
 		try
 		{
-			var dadosEscrita = "{dotA:T:B:U}"; //Para gravar na memória
+			var dadosEscrita = "{dotA:D:U}"; //Para gravar na memória
 			await BluetoothSerial.write(dadosEscrita);
 			console.log(dadosEscrita);
-			setTimeout(() => {this.enviaComandoDisconectaBL()}, 500);
+			setTimeout(() => {this.enviaComandoDisconectaBL()}, 2500);
 		}
 		catch (e)
 		{			
