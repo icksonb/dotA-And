@@ -30,6 +30,8 @@ var portas = ['-', '-', '-'];
 var botao = "-";
 var controle = 0;
 
+var flagFinaliza = false;
+
 const { height, width } = Dimensions.get('screen');
 
 class CardsTwo extends React.Component
@@ -193,7 +195,7 @@ class CarregaSensores extends React.Component
 					    	this.escritaBluetooth();
 					}
 
-				}, 1000, "}"
+				}, 500, "}"
 			);
 		}
 		catch (e)
@@ -226,8 +228,16 @@ class CarregaSensores extends React.Component
 		try
 		{
 			console.log("disconnect");
-			await BluetoothSerial.disconnect();	
+			await BluetoothSerial.disconnect();
 			RNRestart.Restart();
+			/*Alert.alert(
+				"Sucesso",
+				"Configuração realizada com sucesso.",
+				[{ text: "OK", onPress: () => {setTimeout(() => {RNRestart.Restart()}, 4000)
+				}}],
+				{ cancelable: false }
+			);*/
+			
 		}
 		catch (e)
 		{			
@@ -244,7 +254,7 @@ class CarregaSensores extends React.Component
 			var dadosEscrita = "{dotA:T:B:X}"; 
 			await BluetoothSerial.write(dadosEscrita);
 			console.log(dadosEscrita);
-			setTimeout(() => {this.disconectaBL()}, 2500);
+			setTimeout(() => {this.disconectaBL()}, 500);
 		}
 		catch (e)
 		{			
@@ -257,6 +267,8 @@ class CarregaSensores extends React.Component
 	async finalizaApp()
 	{
 		console.log("Finaliza");
+		flagFinaliza = true;
+		this.forceUpdate();
 		try
 		{
 			var dadosEscrita = "{dotA:D:U}"; //Para gravar na memória
@@ -275,7 +287,8 @@ class CarregaSensores extends React.Component
 
 	render()
 	{
-		
+		if(flagFinaliza == false)
+		{
 			return(<Block style={{ flex: 1, alignItems: 'center'}}>
 				<CardsTwo icone1="thermometer-half" titulo1="TEMPERATURA-1" subtitulo1={temperaturas[0]}
 					icone2="thermometer-half" titulo2="TEMPERATURA-2" subtitulo2={temperaturas[1]}/>
@@ -294,7 +307,22 @@ class CarregaSensores extends React.Component
 				</Block>
 
 			);
-		
+		}
+		else
+		{
+			return(<Block style={{ flex: 1, alignItems: 'center'}}>
+				<CardsTwo icone1="thermometer-half" titulo1="TEMPERATURA-1" subtitulo1={temperaturas[0]}
+					icone2="thermometer-half" titulo2="TEMPERATURA-2" subtitulo2={temperaturas[1]}/>
+				<CardsTwo icone1="thermometer-half" titulo1="TEMPERATURA-3" subtitulo1={temperaturas[2]}
+					icone2="plug" titulo2="TENSÃO" subtitulo2={tensao}/>
+				<CardsTwo icone1="building" titulo1="PORTA-1" subtitulo1={portas[0]}
+					icone2="building" titulo2="PORTA-2" subtitulo2={portas[1]}/>
+				<CardsTwo icone1="building" titulo1="PORTA-3" subtitulo1={portas[2]}
+					icone2="warning" titulo2="BOTÃO" subtitulo2={botao}/>
+				<Text size={BASE_SIZE*1.2} style={styles.textHeader}>
+						Aguarde, finalizando aplicação...</Text>
+				</Block>);
+		}
 		
 	}
 

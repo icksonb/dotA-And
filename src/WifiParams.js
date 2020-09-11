@@ -13,37 +13,108 @@ const COLOR_GREY = theme.COLORS.MUTED; // '#D8DDE1';
 
 var pass = "";
 var errorMsg = "";
+var retornoBotoes = true;
 
-function setConfigs(navigation, UUID, SSID)
+class Botoes extends React.Component
 {
-	setSSID(navigation, UUID, SSID);
-}
-
-async function setSSID(navigation, UUID, SSID)
-{
-	if(pass < 3)
+	constructor(props)
 	{
-		Alert.alert(
-			"Erro",
-			"Verifique o tamanho da senha",
-			[{ text: "OK", onPress: () => console.log("OK Pressed") }],
-			{ cancelable: false }
-		);
+		super(props);
+		this.navigation = this.props.navigation;
+		this.params = this.props.navigation.state.params;
+
 	}
-	else
+
+	setConfigs(navigation, UUID, SSID)
+	{
+		retornoBotoes = false;
+		this.forceUpdate();
+		this.setSSID(navigation, UUID, SSID);
+	}
+
+	async setSSID(navigation, UUID, SSID)
+	{
+		if(pass.length <= 3)
+		{
+			Alert.alert(
+				"Erro",
+				"Verifique o tamanho da senha",
+				[{ text: "OK", onPress: () => console.log("OK Pressed") }],
+				{ cancelable: false }
+			);
+			retornoBotoes = true;
+			this.forceUpdate();
+		}
+		else
+		{
+			try
+			{
+				await BluetoothSerial.clear();
+				var dataStr = "{dotA:D:S:" + SSID + "}\r\n";
+				await BluetoothSerial.write(dataStr);
+				await BluetoothSerial.readEvery
+				(
+					(data, intervalId) => 
+					{
+						clearInterval(intervalId); 
+						this.getSSID(navigation, UUID, SSID);
+					}, 500, "}"
+				);
+			}
+			catch(e)
+			{
+				console.log("Error");
+				console.log(e);
+				Alert.alert(
+					"Erro inesperado",
+					"Ocorreu um erro ao se comunicar com o dispositivo.",
+					[{ text: "OK", onPress: () => console.log("OK") }],
+					{ cancelable: false }
+				);
+				retornoBotoes = true;
+				this.forceUpdate();
+			}	
+		}
+		
+		
+		
+	}
+
+	//Recebe valores da comunicação bluetooth
+	async getSSID(navigation, UUID, SSID)
 	{
 		try
 		{
 			await BluetoothSerial.clear();
-			var dataStr = "{dotA:D:S:" + SSID + "}\r\n";
+			var dataStr = "{dotA:G:S}\r\n";
 			await BluetoothSerial.write(dataStr);
 			await BluetoothSerial.readEvery
 			(
 				(data, intervalId) => 
 				{
-					clearInterval(intervalId); 
-					getSSID(navigation, UUID, SSID);
-				}, 1000, "}"
+					clearInterval(intervalId);
+					var ssidRes = data.replace("{", "");
+					ssidRes = ssidRes.replace("}", "");
+					ssidRes = ssidRes.replace("\r", "");
+					ssidRes = ssidRes.replace("\n", "");
+					console.log(ssidRes);
+					console.log(SSID);
+					if(SSID == ssidRes)
+					{
+						this.setPASS(navigation, UUID, SSID);
+					}
+					else
+					{
+						Alert.alert(
+							"Erro inesperado",
+							"O SSID não corresponde ao configurado.",
+							[{ text: "OK", onPress: () => console.log("OK") }],
+							{ cancelable: false }
+						);
+						retornoBotoes = true;
+						this.forceUpdate();
+					}
+				}, 500, "\r\n"
 			);
 		}
 		catch(e)
@@ -56,153 +127,140 @@ async function setSSID(navigation, UUID, SSID)
 				[{ text: "OK", onPress: () => console.log("OK") }],
 				{ cancelable: false }
 			);
-		}	
+			retornoBotoes = true;
+			this.forceUpdate();
+		}
 	}
-	
-	
-	
-}
 
-//Recebe valores da comunicação bluetooth
-async function getSSID(navigation, UUID, SSID)
-{
-	try
+	async setPASS(navigation, UUID, SSID)
 	{
-		await BluetoothSerial.clear();
-		var dataStr = "{dotA:G:S}\r\n";
-		await BluetoothSerial.write(dataStr);
-		await BluetoothSerial.readEvery
-		(
-			(data, intervalId) => 
-			{
-				clearInterval(intervalId);
-				var ssidRes = data.replace("{", "");
-				ssidRes = ssidRes.replace("}", "");
-				ssidRes = ssidRes.replace("\r", "");
-				ssidRes = ssidRes.replace("\n", "");
-				console.log(ssidRes);
-				console.log(SSID);
-				if(SSID == ssidRes)
+		if(pass <= 3)
+		{
+			Alert.alert(
+				"Erro",
+				"Verifique o tamanho da senha",
+				[{ text: "OK", onPress: () => console.log("OK Pressed") }],
+				{ cancelable: false }
+			);
+			retornoBotoes = true;
+			this.forceUpdate();
+			return;
+		}
+		try
+		{
+			await BluetoothSerial.clear();
+			var dataStr = "{dotA:D:P:" + pass + "}\r\n";
+			await BluetoothSerial.write(dataStr);
+			await BluetoothSerial.readEvery
+			(
+				(data, intervalId) => 
 				{
-					setPASS(navigation, UUID, SSID);
-				}
-				else
-				{
-					Alert.alert(
-						"Erro inesperado",
-						"O SSID não corresponde ao configurado.",
-						[{ text: "OK", onPress: () => console.log("OK") }],
-						{ cancelable: false }
-					);
-				}
-			}, 1000, "\r\n"
-		);
+					clearInterval(intervalId); 
+					this.getPass(navigation, UUID, SSID);
+				}, 500, "}"
+			);
+		}
+		catch(e)
+		{
+			console.log("Error");
+			console.log(e);
+			Alert.alert(
+				"Erro inesperado",
+				"Ocorreu um erro ao se comunicar com o dispositivo.",
+				[{ text: "OK", onPress: () => console.log("OK") }],
+				{ cancelable: false }
+			);
+			retornoBotoes = true;
+			this.forceUpdate();
+		}
 	}
-	catch(e)
-	{
-		console.log("Error");
-		console.log(e);
-		Alert.alert(
-			"Erro inesperado",
-			"Ocorreu um erro ao se comunicar com o dispositivo.",
-			[{ text: "OK", onPress: () => console.log("OK") }],
-			{ cancelable: false }
-		);
-	}
-}
 
-async function setPASS(navigation, UUID, SSID)
-{
-	if(pass < 3)
+	//Recebe valores da comunicação bluetooth
+	async getPass(navigation, UUID, SSID)
 	{
-		Alert.alert(
-			"Erro",
-			"Verifique o tamanho da senha",
-			[{ text: "OK", onPress: () => console.log("OK Pressed") }],
-			{ cancelable: false }
-		);
-		return;
-	}
-	try
-	{
-		await BluetoothSerial.clear();
-		var dataStr = "{dotA:D:P:" + pass + "}\r\n";
-		await BluetoothSerial.write(dataStr);
-		await BluetoothSerial.readEvery
-		(
-			(data, intervalId) => 
-			{
-				clearInterval(intervalId); 
-				getPass(navigation, UUID, SSID);
-			}, 1000, "}"
-		);
-	}
-	catch(e)
-	{
-		console.log("Error");
-		console.log(e);
-		Alert.alert(
-			"Erro inesperado",
-			"Ocorreu um erro ao se comunicar com o dispositivo.",
-			[{ text: "OK", onPress: () => console.log("OK") }],
-			{ cancelable: false }
-		);
-	}
-}
-
-//Recebe valores da comunicação bluetooth
-async function getPass(navigation, UUID, SSID)
-{
-	try
-	{
-		await BluetoothSerial.clear();
-		var dataStr = "{dotA:G:P}\r\n";
-		await BluetoothSerial.write(dataStr);
-		await BluetoothSerial.readEvery
-		(
-			(data, intervalId) => 
-			{
-				clearInterval(intervalId);
-				var passResponse = data.replace("{", "");
-				passResponse = passResponse.replace("}", "");
-				passResponse = passResponse.replace("\r", "");
-				passResponse = passResponse.replace("\n", "");
-				console.log(pass);
-				console.log(passResponse);
-				if(pass == passResponse)
+		try
+		{
+			await BluetoothSerial.clear();
+			var dataStr = "{dotA:G:P}\r\n";
+			await BluetoothSerial.write(dataStr);
+			await BluetoothSerial.readEvery
+			(
+				(data, intervalId) => 
 				{
-					Alert.alert(
-						"Sucesso",
-						"Configuração realizada com sucesso",
-						[{ text: "OK", onPress: () => navigation.navigate('SensoresPage' ,
-			 					{UUID : UUID, }) }],
-						{ cancelable: false }
-					);
-				}
-				else
-				{
-					Alert.alert(
-						"Erro",
-						"Senha não confere",
-						[{ text: "OK", onPress: () => console.log("OK Pressed") }],
-						{ cancelable: false }
-					);
-				}			
-			}, 1000, "\r\n"
-		);
+					clearInterval(intervalId);
+					var passResponse = data.replace("{", "");
+					passResponse = passResponse.replace("}", "");
+					passResponse = passResponse.replace("\r", "");
+					passResponse = passResponse.replace("\n", "");
+					console.log(pass);
+					console.log(passResponse);
+					if(pass == passResponse)
+					{
+						Alert.alert(
+							"Sucesso",
+							"Configuração realizada com sucesso",
+							[{ text: "OK", onPress: () => 
+									this.navigation.navigate('SensoresPage' ,
+				 					{UUID : UUID, }) }],
+							{ cancelable: false }
+						);
+						retornoBotoes = true;
+						this.forceUpdate();
+					}
+					else
+					{
+						Alert.alert(
+							"Erro",
+							"Senha não confere",
+							[{ text: "OK", onPress: () => console.log("OK Pressed") }],
+							{ cancelable: false }
+						);
+						retornoBotoes = true;
+						this.forceUpdate();
+					}			
+				}, 500, "\r\n"
+			);
+		}
+		catch(e)
+		{
+			console.log("Error");
+			console.log(e);
+			Alert.alert(
+				"Erro inesperado",
+				"Ocorreu um erro ao se comunicar com o dispositivo.",
+				[{ text: "OK", onPress: () => console.log("OK") }],
+				{ cancelable: false }
+			);
+			retornoBotoes = true;
+			this.forceUpdate();
+		}
+				
 	}
-	catch(e)
+	render()
 	{
-		console.log("Error");
-		console.log(e);
-		Alert.alert(
-			"Erro inesperado",
-			"Ocorreu um erro ao se comunicar com o dispositivo.",
-			[{ text: "OK", onPress: () => console.log("OK") }],
-			{ cancelable: false }
-		);
+		if(retornoBotoes == true)
+		{
+			return(<View>
+				<Button color="#78A59A" 
+					onPress={() => this.setConfigs(this.navigation, 
+						this.navigation.state.params.UUID,
+						this.navigation.state.params.SSID)}>
+					CONFIRMAR
+				</Button>
+				<Button color="#BE5A38" 
+					onPress={() => this.navigation.navigate('ListWifiPage')}>
+					VOLTAR
+				</Button>
+				</View>
+			);	
+		}
+		else
+		{
+			return(<Text size={BASE_SIZE*1.1} style={styles.textSSID}>
+				Aguarde, sincronizando dados...</Text>);	
+		}
+		
 	}
-			
 }
 
 const WifiParams = ({ navigation }) => (
@@ -215,15 +273,8 @@ const WifiParams = ({ navigation }) => (
 				<Input placeholder="password" rounded password viewPass 
 				style={{ borderColor: COLOR_GREY }} onChangeText={value => {pass=value}}/>
 				
-				<Button color="#78A59A" 
-					onPress={() => setConfigs(navigation, navigation.state.params.UUID,
-						navigation.state.params.SSID)}>
-					CONFIRMAR
-				</Button>
-				<Button color="#BE5A38" 
-					onPress={() => navigation.navigate('ListWifiPage')}>
-					VOLTAR
-				</Button>
+				<Botoes navigation={navigation}/>
+				
 			</Block>
 		</Block>
 

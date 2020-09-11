@@ -146,10 +146,22 @@ class ListDevices extends React.Component
 						{
 							console.log("Falhou");
 							console.log(error);
+							Alert.alert(
+								"Erro",
+								"Verifique suas permissões",
+								[{ text: "OK", onPress: () => console.log("OK Pressed") }],
+								{ cancelable: false }
+							);
 						});
 					}
 					else 
 					{
+						Alert.alert(
+							"Erro",
+							"Verifique suas permissões",
+							[{ text: "OK", onPress: () => console.log("OK Pressed") }],
+							{ cancelable: false }
+						);
 						return "Error";
 					}
 				});
