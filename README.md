@@ -7,6 +7,7 @@
 ```
 yarn
 ```
+- Edite o arquivo ./android/local.properties para indicar o local do SDK do Android.
 
 ## Executando em modo de depuração
 - Abra um terminal (na raiz deste projeto) e execute:
@@ -19,7 +20,7 @@ yarn start
 yarn android
 ```
 
-## Criado o apk
+## Criando o apk
 - Abra um terminal (na raiz deste projeto) e execute:
 ```
 cd ./android
