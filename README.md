@@ -1,70 +1,32 @@
-# dotA-And
+# dotA-config
 
-Aplicativo para Android para configuração de dispositivo ESP32 através do bluetooth desenvolvido por React Native.
-
-Deve-se seguir os seguintes passos para a criação do projeto, instalação das dependência e testes do projeto.
-
-OBS.: antes de iniciar o projeto é necessário a instalação do React Native, bem como as bibliotecas e softwares necessário para compilação para Android.
-
-### 1 - CRIANDO O PROJETO
-
-Para criar o projeto, deve-se entrar no diretório desejado e executar:
+## Instalando as dependências
+- Inicialmente instale o react-native (versão 0.63.4 ou superior) e o yarn;
+- Clone este repositório;
+- Na pasta raiz deste projeto execute o comando abaixo e aguarde o processo ser finalizado:
 ```
-npx react-native init dota
-```
-Após o projeto ser criado, coloque os arquivos deste repositório no diretório **dota** criado (exceto os diretórios **ESP32** e **Releases**).
-
-### 2 - INSTALANDO DEPENDÊNCIAS
-Será necessário instalar diversas dependências, utilizando os comandos abaixo (os comandos devem ser utilizandos no diretório **dota** que foi criado anteriomente).
-```
-npm install galio-framework
-npm install react-native-restart
-npm install react-native-bluetooth-serial-next
-react-native link react-native-bluetooth-serial-next
-npm install convert-string
-npm install react-navigation
-npm install react-navigation-stack
-npm install react-native-vector-icons
-npm install react-native-gesture-handler
-npm install @react-native-community/masked-view
-npm install react-native-screens
-npm install react-native-wifi-reborn
-react-native link react-native-wifi-reborn
+yarn
 ```
 
-Deve-se, então, alterar o arquivo build.gradle localizado em dota/node_modules/react-native-bluetooth-serial-next/android, alterando as seguintes configurações:
-
+## Executando em modo de depuração
+- Abra um terminal (na raiz deste projeto) e execute:
 ```
-...
-android {
-
-	compileSdkVersion 29	
-
-	defaultConfig {
-		minSdkVersion 18
-        targetSdkVersion 29
-        ...
-	}
-}
-...
+yarn start
+```
+- Conecte o smartphone com o modo de desenvolvedor ativado;
+- Abra outro terminal (também na raiz deste projeto) e execute:
+```
+yarn android
 ```
 
-### 3 - CRIANDO VERSÃO PARA ANDROID
-Para criar a release para Android, inicialmente se abrir e alterar o arquivo build.gradle localizado em dota/android:
+## Criado o apk
+- Abra um terminal (na raiz deste projeto) e execute:
 ```
-minSdkVersion = 21
-```
-
-Deve-se, também, criar o arquivo **local.properties** no diretório android, que deverá conter os caminhos do sdk e ndk do Android. Como exemplo, ficaria:
-```
-ndk.dir=/usr/lib/android-sdk/ndk-bundle
-sdk.dir=/usr/lib/android-sdk
-```
-
-Para compilar, deve-se utilizar os seguintes comandos (considerando o diretório atual sendo o **dota**):
-```
-cd android
+cd ./android
+./gradlew clean
 ./gradlew assembleRelease
 ```
+- Ao final, o apk será gerado em android/app/build/outputs/apk/release/app-release.apk.
 
-O arquivo final foi criado em *dota/android/app/build/outputs/apk/release/*
+OBS1.: No windows, você deve executar com gradle.bat no lugar de gradlew.
+OBS2.: Para gerar um apk a ser enviado para Play Store, siga o seguinte link: https://tableless.com.br/react-native-build-release-android/

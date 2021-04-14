@@ -21,6 +21,7 @@ const COLOR_GREY = theme.COLORS.MUTED; // '#D8DDE1';
 var SERIE = "-";
 var LOTE = "-";
 var CONEXAO = "Sincronizando";
+var MAC = "-";
 
 var conectado = 0;
 var characteristic = "";
@@ -113,6 +114,37 @@ class CarregaBluetooth extends React.Component
 		this.params = this.props.navigation.state.params;
 	}
 
+	async getMAC()
+	{
+		try
+		{
+			await BluetoothSerial.clear();
+			await BluetoothSerial.write("{dotA:T:S:M}");
+			await BluetoothSerial.readEvery
+			(
+				(data, intervalId) => 
+				{
+					console.log("MAC");
+					console.log(data);
+					clearInterval(intervalId); 
+					MAC = data.replace("{", "");
+					MAC = MAC.replace("}", "");
+					MAC = MAC.replace("\r", "");
+					MAC = MAC.replace("\n", "");
+
+					this.forceUpdate();
+				}, 1000, "}"
+			);
+		}
+		catch(e)
+		{
+			this.forceUpdate();
+			console.log("Error");
+			console.log(e);
+		}
+
+	}
+
 	async getLote()
 	{
 		try
@@ -139,6 +171,7 @@ class CarregaBluetooth extends React.Component
 					}
 					
 					this.forceUpdate();
+					this.getMAC();
 				}, 1000, "\r\n"
 			);
 		}
@@ -268,8 +301,8 @@ class CarregaBluetooth extends React.Component
 			return(<Block style={{ flex: 1, alignItems: 'center'}}>
 				<CardsTwo icone1="bluetooth-b" titulo1="NOME" subtitulo1={this.params.name}
 					icone2="rss" titulo2="ESTADO" subtitulo2="Conectado"/>
-				<CardsTwo icone1="database" titulo1="LOTE" subtitulo1={LOTE}
-					icone2="link" titulo2="SÉRIE" subtitulo2={SERIE}/>
+				<CardsTwo icone1="database" titulo1="LOTE/SÉRIE" subtitulo1={LOTE+'/'+SERIE}
+					icone2="link" titulo2="MAC" subtitulo2={MAC}/>
 				<Button color="#78A59A" center
 					onPress={() => this.props.navigation.navigate('ListWifiPage' ,
 		 					{UUID : this.params.UUID,})}>CONTINUAR
@@ -288,8 +321,8 @@ class CarregaBluetooth extends React.Component
 			return(<Block style={{ flex: 1, alignItems: 'center'}}>
 				<CardsTwo icone1="bluetooth-b" titulo1="NOME" subtitulo1={this.params.name}
 					icone2="rss" titulo2="ESTADO" subtitulo2="Erro"/>
-				<CardsTwo icone1="database" titulo1="LOTE" subtitulo1={LOTE}
-					icone2="link" titulo2="SÉRIE" subtitulo2={SERIE}/>
+				<CardsTwo icone1="database" titulo1="LOTE/SÉRIE" subtitulo1={LOTE+'/'+SERIE}
+					icone2="link" titulo2="MAC" subtitulo2={MAC}/>
 				<Button color="#BE5A38" center
 					onPress={() => this.props.navigation.navigate('BluetoothPage')}
 					>VOLTAR</Button>
@@ -301,8 +334,8 @@ class CarregaBluetooth extends React.Component
 			return(<Block style={{ flex: 1, alignItems: 'center'}}>
 				<CardsTwo icone1="bluetooth-b" titulo1="NOME" subtitulo1={this.params.name}
 					icone2="rss" titulo2="ESTADO" subtitulo2="Sincronizando"/>
-				<CardsTwo icone1="database" titulo1="LOTE" subtitulo1={LOTE}
-					icone2="link" titulo2="SÉRIE" subtitulo2={SERIE}/>
+				<CardsTwo icone1="database" titulo1="LOTE/SÉRIE" subtitulo1={LOTE+'/'+SERIE}
+					icone2="link" titulo2="MAC" subtitulo2={MAC}/>
 				<Button color="#BE5A38" center
 					onPress={() => this.props.navigation.navigate('BluetoothPage')}
 					>VOLTAR</Button>
