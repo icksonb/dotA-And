@@ -30,4 +30,5 @@ cd ./android
 - Ao final, o apk será gerado em android/app/build/outputs/apk/release/app-release.apk.
 
 OBS1.: No windows, você deve executar com gradle.bat no lugar de gradlew.
+
 OBS2.: Para gerar um apk a ser enviado para Play Store, siga o seguinte link: https://tableless.com.br/react-native-build-release-android/
