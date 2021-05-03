@@ -29,6 +29,23 @@ cd ./android
 ```
 - Ao final, o apk será gerado em android/app/build/outputs/apk/release/app-release.apk.
 
-OBS1.: No windows, você deve executar com gradle.bat no lugar de gradlew.
+## Compilando
+- Gere inicialmente uma chave de assinatura privada usando a ferramenta keytool, com o comando abaixo (caso você possua uma chave privada, pule este passo). Você pode mudar o alias por um outro texto.
+```
+keytool -genkey -v -keystore my-release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000
+```
+- Coloque a chave no diretório android/app com o nome de my-release-key.keystore;
+- Edite o arquivo android/gradle.properties com as suas informações nos seguintes campos:
+```
+MYAPP_RELEASE_STORE_FILE=my-release-key.keystore
+MYAPP_RELEASE_KEY_ALIAS=my-key-alias
+MYAPP_RELEASE_STORE_PASSWORD=**
+MYAPP_RELEASE_KEY_PASSWORD=*****
+```
+- Para compilar, entre no diretório android e execute o comando:
+```
+./gradlew assembleRelease
+```
+- Após isso, será gerados os arquivos .apk em android/app/build/outputs/apk/release/.
 
-OBS2.: Para gerar um apk a ser enviado para Play Store, siga o seguinte link: https://tableless.com.br/react-native-build-release-android/
+OBS.: No windows, você deve executar com gradle.bat no lugar de gradlew.
