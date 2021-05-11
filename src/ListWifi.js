@@ -101,7 +101,7 @@ class ListDevices extends React.Component
 				nets =>
 				{
 					this.retorno = true;
-					var arrayJson = JSON.parse(nets);
+					var arrayJson = nets;
 					for(var aux=0; aux<arrayJson.length; aux++)
 					{
 						console.log(arrayJson[aux].SSID)
