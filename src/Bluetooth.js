@@ -296,7 +296,7 @@ const Bluetooth = ({ navigation }) => (
 		</Block>
 		
 		<ListDevices funcao={navigation}/>
-		
+		<Text style={{textAlign: 'center', color : 'white'}}>Versão 1.2</Text>
 	 </Block>
   
 );
