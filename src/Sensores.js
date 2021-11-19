@@ -193,9 +193,11 @@ class CarregaSensores extends React.Component
 					    }
 					    else
 					    	this.escritaBluetooth();
+					} else {
+						console.log("Nenhum dado");
 					}
 
-				}, 500, "}"
+				}, 1000, '}'
 			);
 		}
 		catch (e)

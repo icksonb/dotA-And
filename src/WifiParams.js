@@ -34,7 +34,7 @@ class Botoes extends React.Component
 
 	async setSSID(navigation, UUID, SSID)
 	{
-		if(pass.length <= 3)
+		/*if(pass.length <= 3)
 		{
 			Alert.alert(
 				"Erro",
@@ -46,7 +46,7 @@ class Botoes extends React.Component
 			this.forceUpdate();
 		}
 		else
-		{
+		{*/
 			try
 			{
 				await BluetoothSerial.clear();
@@ -74,7 +74,7 @@ class Botoes extends React.Component
 				retornoBotoes = true;
 				this.forceUpdate();
 			}	
-		}
+		//}
 		
 		
 		
@@ -134,7 +134,7 @@ class Botoes extends React.Component
 
 	async setPASS(navigation, UUID, SSID)
 	{
-		if(pass <= 3)
+		/*if(pass <= 3)
 		{
 			Alert.alert(
 				"Erro",
@@ -145,7 +145,7 @@ class Botoes extends React.Component
 			retornoBotoes = true;
 			this.forceUpdate();
 			return;
-		}
+		}*/
 		try
 		{
 			await BluetoothSerial.clear();

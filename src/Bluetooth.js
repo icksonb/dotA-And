@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, StatusBar, Dimensions, StyleSheet, ScrollView, Image, Alert, 
-  PermissionsAndroid, NativeModules, AppState, NativeEventEmitter} from 'react-native';
-import {Text, Block, Card, Button, NavBar, theme} from 'galio-framework';
+  PermissionsAndroid, NativeModules, AppState, NativeEventEmitter, Linking} from 'react-native';
+import {Text, Block, Card, Button, NavBar, theme, Link} from 'galio-framework';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 /*import BluetoothSerial, {
@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import BluetoothSerial, {
   withSubscription
 } from "react-native-bluetooth-serial-next";
+import VersaoApp from './AppVersao';
 
 const BASE_SIZE = theme.SIZES.BASE;
 const GRADIENT_BLUE = ['#6B84CA', '#8F44CE'];
@@ -60,7 +61,23 @@ class ListDevices extends React.Component
 	{
 		try
 		{
-			console.log("List")
+			let versaoAntiga = false;
+			versaoAntiga = await VersaoApp();
+
+			if (versaoAntiga) {
+				Alert.alert(
+					"Versão desatualizada",
+					"sta versão do aplicativo está desatualizada. Por favor, atualize o aplicativo.",
+					[{ text: "Atualizar", onPress: () => { 
+						Linking.openURL('https://play.google.com/store/apps/details?id=com.dota') 
+					}}],
+				);
+
+				return;
+			}
+			
+			console.log("List");
+
 			const devicesSerial = await BluetoothSerial.list();	
 
 			var peripherals = devicesSerial;
@@ -296,7 +313,7 @@ const Bluetooth = ({ navigation }) => (
 		</Block>
 		
 		<ListDevices funcao={navigation}/>
-		<Text style={{textAlign: 'center', color : 'white'}}>Versão 1.2</Text>
+		
 	 </Block>
   
 );

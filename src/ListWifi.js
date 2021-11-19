@@ -100,12 +100,12 @@ class ListDevices extends React.Component
 				WifiManager.loadWifiList().then(
 				nets =>
 				{
+					console.log(nets);
 					this.retorno = true;
-					var arrayJson = nets;
-					for(var aux=0; aux<arrayJson.length; aux++)
+					for(var aux=0; aux < nets.length; aux++)
 					{
-						console.log(arrayJson[aux].SSID)
-						redes.push(arrayJson[aux].SSID);
+						console.log(nets[aux].SSID)
+						redes.push(nets[aux].SSID);
 						this.forceUpdate();		
 					}
 					
