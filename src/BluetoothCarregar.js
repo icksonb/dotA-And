@@ -11,6 +11,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import BluetoothSerial, {
   withSubscription
 } from "react-native-bluetooth-serial-next";
+import RNRestart from 'react-native-restart';
 
 const BASE_SIZE = theme.SIZES.BASE;
 const GRADIENT_BLUE = ['#6B84CA', '#8F44CE'];
@@ -308,7 +309,7 @@ class CarregaBluetooth extends React.Component
 		 					{UUID : this.params.UUID,})}>CONTINUAR
 				</Button>
 				<Button color="#BE5A38" center
-					onPress={() => this.props.navigation.navigate('BluetoothPage')}
+					onPress={() => RNRestart.Restart()}
 					>VOLTAR
 				</Button>
 				
@@ -324,7 +325,7 @@ class CarregaBluetooth extends React.Component
 				<CardsTwo icone1="database" titulo1="LOTE/SÉRIE" subtitulo1={LOTE+'/'+SERIE}
 					icone2="link" titulo2="MAC" subtitulo2={MAC}/>
 				<Button color="#BE5A38" center
-					onPress={() => this.props.navigation.navigate('BluetoothPage')}
+					onPress={() => RNRestart.Restart()}
 					>VOLTAR</Button>
 				</Block>
 			);		
@@ -337,7 +338,7 @@ class CarregaBluetooth extends React.Component
 				<CardsTwo icone1="database" titulo1="LOTE/SÉRIE" subtitulo1={LOTE+'/'+SERIE}
 					icone2="link" titulo2="MAC" subtitulo2={MAC}/>
 				<Button color="#BE5A38" center
-					onPress={() => this.props.navigation.navigate('BluetoothPage')}
+					onPress={() => RNRestart.Restart()}
 					>VOLTAR</Button>
 				</Block>
 			);		

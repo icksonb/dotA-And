@@ -28,7 +28,6 @@ async function VersaoApp() {
         if (versaoLocal < version) {
             result = true;
         }
-
     });
     return result;
 }
