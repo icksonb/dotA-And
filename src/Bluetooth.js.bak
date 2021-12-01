@@ -12,7 +12,6 @@ import BluetoothSerial, {
   withSubscription
 } from "react-native-bluetooth-serial-next";
 import VersaoApp from './AppVersao';
-import endpoints from './endpoints';
 
 const BASE_SIZE = theme.SIZES.BASE;
 const GRADIENT_BLUE = ['#6B84CA', '#8F44CE'];
@@ -48,6 +47,9 @@ class RenderCard extends React.Component {
 let verifica = false;
 let devices = new Array();
 var retorno = 0;
+var versaoAtual;
+var lRetVersionNumber=false;
+
 class ListDevices extends React.Component
 {
 
@@ -63,8 +65,8 @@ class ListDevices extends React.Component
 		try
 		{
 			let versaoAntiga = false;
-			versaoAntiga = await VersaoApp();
-
+			versaoAntiga = await VersaoApp(lRetVersionNumber);
+			
 			if (versaoAntiga) {
 				Alert.alert(
 					"Versão desatualizada",
@@ -77,6 +79,24 @@ class ListDevices extends React.Component
 				return;
 			}
 			
+			versaoAtual = false;
+			lRetVersionNumber = true;
+			versaoAtual = await VersaoApp(lRetVersionNumber);
+			
+			if (versaoAtual) {
+			
+				Alert.alert(
+					"Versão desatualizada",
+					"erro ao ler versionamento da loja. Por favor, verifique conexão com a Internet.",
+					[{ text: "Atualizar", onPress: () => { 
+						Linking.openURL('https://play.google.com/store/apps/details?id=com.dota') 
+					}}],
+				);
+
+				return;
+				
+			}	
+					
 			console.log("List");
 
 			const devicesSerial = await BluetoothSerial.list();	
@@ -258,8 +278,6 @@ class ListDevices extends React.Component
 		{
 			return(
 				<View style={{ flex: 1, alignItems: 'center' }}>
-					<Text size={BASE_SIZE * 1.125} style={styles.textHeader}>
-						{endpoints.version}</Text>
 					<Button round center style={{ width: 40, height: 40}} color={COLOR_GREY} 
 							onPress={() => this.refresh()}>
 			  			<Icon size={22} name="refresh" color={COLOR_WHITE} />
@@ -310,9 +328,10 @@ const Bluetooth = ({ navigation }) => (
 		<Block row center card space="between" style={styles.header}>
 			<Block flex center space="between">
 				<Image source={require('./image/logo.png')}/>
-		  </Block>
-		  		
-		  
+				//<Image source={require('./image/build.png')}/>
+				<Text size={BASE_SIZE * 1.125} style={styles.textHeader}>{versaoAtual}</Text>
+			</Block>
+		  			  
 		</Block>
 		
 		<ListDevices funcao={navigation}/>
@@ -376,4 +395,3 @@ Bluetooth.navigationOptions = {
 }
 
 export default Bluetooth;
-

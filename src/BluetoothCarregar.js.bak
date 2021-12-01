@@ -355,7 +355,7 @@ const BluetoothCarregar = ({ navigation }) => (
 		<Block row center card space="between" style={styles.header}>
 			<Block flex center space="between">
 				<Image source={require('./image/logo.png')}/>
-				
+				<Image source={require('./image/build.png')}/>
 			</Block>
 		</Block>
 		

@@ -1,6 +1,6 @@
 import VersionInfo from 'react-native-version-info';
   
-async function VersaoApp() {
+async function VersaoApp(ctl) {
     let result = false;
     const response = await fetch('https://play.google.com/store/apps/details?id=com.dota');
     await response.text().then(function(response) {
@@ -27,8 +27,12 @@ async function VersaoApp() {
 
         if (versaoLocal < version) {
             result = true;
-        }
-
+        } 
+		
+		if (ctl) {
+			result = version;		
+		}	
+        
     });
     return result;
 }
