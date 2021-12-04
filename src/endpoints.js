@@ -1,3 +1,3 @@
 export default {
-  version: 'V: 2.1 Build: 01.12.2021,19:50'  
+  version: 'V: 2.2 Build: 03.12.2021,21:00'  
 };

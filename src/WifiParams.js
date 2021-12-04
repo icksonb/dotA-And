@@ -12,6 +12,7 @@ const COLOR_WHITE = theme.COLORS.WHITE;
 const COLOR_GREY = theme.COLORS.MUTED; // '#D8DDE1';
 
 var pass = "";
+var passRep = "";
 var errorMsg = "";
 var retornoBotoes = true;
 
@@ -34,19 +35,17 @@ class Botoes extends React.Component
 
 	async setSSID(navigation, UUID, SSID)
 	{
-		/*if(pass.length <= 3)
+		if (pass != passRep)
 		{
 			Alert.alert(
-				"Erro",
-				"Verifique o tamanho da senha",
+				"Erro - as senhas são diferentes",
+				"Por favor, informe as duas senhas iguais.",
 				[{ text: "OK", onPress: () => console.log("OK Pressed") }],
 				{ cancelable: false }
 			);
 			retornoBotoes = true;
 			this.forceUpdate();
-		}
-		else
-		{*/
+		} else {
 			try
 			{
 				await BluetoothSerial.clear();
@@ -74,7 +73,7 @@ class Botoes extends React.Component
 				retornoBotoes = true;
 				this.forceUpdate();
 			}	
-		//}
+		}
 		
 		
 		
@@ -134,18 +133,19 @@ class Botoes extends React.Component
 
 	async setPASS(navigation, UUID, SSID)
 	{
-		/*if(pass <= 3)
+		if (pass != passRep) 
 		{
 			Alert.alert(
-				"Erro",
-				"Verifique o tamanho da senha",
+				"Erro - as senhas são diferentes",
+				"Por favor, informe as duas senhas iguais.",
 				[{ text: "OK", onPress: () => console.log("OK Pressed") }],
 				{ cancelable: false }
 			);
 			retornoBotoes = true;
 			this.forceUpdate();
 			return;
-		}*/
+		}
+
 		try
 		{
 			await BluetoothSerial.clear();
@@ -270,8 +270,8 @@ const WifiParams = ({ navigation }) => (
 				<Image source={require('./image/logo.png')}/>
 				<Text size={BASE_SIZE * 1.2} style={styles.textHeader}>CONFIRME OS DADOS</Text>
 				<Text size={BASE_SIZE*1.1} style={styles.textSSID}>SSID: {navigation.state.params.SSID}</Text>
-				<Input placeholder="password" rounded password viewPass 
-				style={{ borderColor: COLOR_GREY }} onChangeText={value => {pass=value}}/>
+				<Input placeholder="Senha" rounded style={{ borderColor: COLOR_GREY }} onChangeText={value => {pass=value}}/>
+				<Input placeholder="Repita a senha" rounded style={{ borderColor: COLOR_GREY }} onChangeText={value => {passRep=value}}/>
 				
 				<Botoes navigation={navigation}/>
 				
